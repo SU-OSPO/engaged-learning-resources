@@ -14,6 +14,3 @@ Django + PostgreSQL app for faculty to browse teaching activities. Profs manage 
 - Public website (search, browse, activity detail)
 - Admin panel setup (register models)
 - File upload flow
-
-
-
