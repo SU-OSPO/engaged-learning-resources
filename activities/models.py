@@ -100,7 +100,7 @@ class Material(models.Model):
         related_name="materials",
     )
     title = models.CharField(max_length=255)
-    file_path = models.CharField(max_length=500)
+    file = models.FileField(upload_to="materials/%Y/%m/", blank=True, null=True)
     material_type = models.CharField(
         max_length=20,
         choices=MaterialType.choices,
