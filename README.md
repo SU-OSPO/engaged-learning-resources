@@ -13,4 +13,6 @@ Django + PostgreSQL app for faculty to browse teaching activities. Profs manage 
 - **File upload** : Material uses FileField, uploads stored in `media/`
 - **Media serving** : files served at `/media/` in development
 - **.gitignore** : `media/` excluded from version control
+- **Search & filter** : search by title, filter by tag, filter by category
+- **API endpoints** : `GET /activities/` (list), `GET /activities/<id>/` (detail)
 
