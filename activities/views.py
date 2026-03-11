@@ -4,11 +4,14 @@ from django.views.decorators.http import require_GET
 from .models import Activity, Category
 
 
+SORT_FIELDS = {"title", "-title", "created_at", "-created_at"}
+
+
 @require_GET
 def activity_list(request):
     """
-    List activities with optional search and filters.
-    Query params: q (search title), tag (filter by tag name), category (filter by category id)
+    List activities with optional search, filters, pagination, and sorting.
+    Query params: q, tag, category, page, limit, sort
     """
     qs = Activity.objects.select_related("category").prefetch_related("tags", "materials")
 
@@ -30,6 +33,27 @@ def activity_list(request):
         except ValueError:
             pass
 
+    # Sorting
+    sort = request.GET.get("sort", "-created_at").strip()
+    if sort in SORT_FIELDS:
+        qs = qs.order_by(sort)
+    else:
+        qs = qs.order_by("-created_at")
+
+    # Pagination
+    try:
+        limit = max(1, min(100, int(request.GET.get("limit", 20))))
+    except ValueError:
+        limit = 20
+    try:
+        page = max(1, int(request.GET.get("page", 1)))
+    except ValueError:
+        page = 1
+    offset = (page - 1) * limit
+
+    total = qs.count()
+    qs = qs[offset : offset + limit]
+
     activities = [
         {
             "id": a.id,
@@ -43,7 +67,15 @@ def activity_list(request):
         for a in qs
     ]
 
-    return JsonResponse({"activities": activities, "count": len(activities)})
+    return JsonResponse(
+        {
+            "activities": activities,
+            "count": len(activities),
+            "total": total,
+            "page": page,
+            "limit": limit,
+        }
+    )
 
 
 @require_GET
