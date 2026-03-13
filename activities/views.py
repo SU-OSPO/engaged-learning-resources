@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
-from .models import Activity, Category
+from .models import Activity, Category, Tag
 
 
 SORT_FIELDS = {"title", "-title", "created_at", "-created_at"}
@@ -91,7 +91,7 @@ def activity_detail(request, pk):
             "id": m.id,
             "title": m.title,
             "material_type": m.get_material_type_display(),
-            "file_url": m.file.url if m.file else None,
+            "file_url": request.build_absolute_uri(m.file.url) if m.file else None,
             "uploaded_at": m.uploaded_at.isoformat(),
         }
         for m in activity.materials.all()
@@ -110,3 +110,17 @@ def activity_detail(request, pk):
             "updated_at": activity.updated_at.isoformat(),
         }
     )
+
+
+@require_GET
+def tag_list(request):
+    """List all tags for filter dropdowns."""
+    tags = Tag.objects.order_by("name").values("id", "name")
+    return JsonResponse({"tags": list(tags)})
+
+
+@require_GET
+def category_list(request):
+    """List all categories for filter dropdowns."""
+    categories = Category.objects.order_by("name").values("id", "name", "description")
+    return JsonResponse({"categories": list(categories)})

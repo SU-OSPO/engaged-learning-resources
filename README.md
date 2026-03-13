@@ -17,4 +17,7 @@ Django + PostgreSQL app for faculty to browse teaching activities. Profs manage 
 - **API endpoints** : `GET /activities/` (list), `GET /activities/<id>/` (detail)
 - **Pagination** : `?page=1&limit=20`
 - **Sorting** : `?sort=title`, `?sort=-created_at`, etc.
+- **Tag list** : `GET /tags/`
+- **Category list** : `GET /categories/`
+- **File URLs** : material `file_url` returns absolute URLs for download
 

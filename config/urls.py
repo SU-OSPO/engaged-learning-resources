@@ -18,10 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from activities import views as activities_views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("activities/", include("activities.urls")),
+    path("tags/", activities_views.tag_list),
+    path("categories/", activities_views.category_list),
 ]
 
 if settings.DEBUG:
