@@ -14,6 +14,9 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = "categories"
         ordering = ["name"]
+        indexes = [
+            models.Index(fields=["name"], name="idx_category_name"),
+        ]
 
     def __str__(self):
         return self.name
@@ -53,6 +56,7 @@ class Activity(models.Model):
         indexes = [
             models.Index(fields=["title"], name="idx_activity_title"),
             models.Index(fields=["category"], name="idx_activity_category_id"),
+            models.Index(fields=["created_at"], name="idx_activity_created_at"),
         ]
 
     def __str__(self):

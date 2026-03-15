@@ -1,5 +1,40 @@
+from django import forms
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from .models import Category, Tag, Activity, ActivityTag, Material
+
+
+class TagAdminForm(forms.ModelForm):
+    """Prevent duplicate tags (case-insensitive)."""
+
+    class Meta:
+        model = Tag
+        fields = "__all__"
+
+    def clean_name(self):
+        name = self.cleaned_data.get("name", "").strip()
+        if not name:
+            raise ValidationError("Tag name is required.")
+        qs = Tag.objects.filter(name__iexact=name)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError("A tag with this name already exists.")
+        return name
+
+
+class ActivityAdminForm(forms.ModelForm):
+    """Require title for activity."""
+
+    class Meta:
+        model = Activity
+        fields = "__all__"
+
+    def clean_title(self):
+        title = self.cleaned_data.get("title", "").strip()
+        if not title:
+            raise ValidationError("Activity title is required.")
+        return title
 
 
 class ActivityTagInline(admin.TabularInline):
@@ -10,6 +45,7 @@ class ActivityTagInline(admin.TabularInline):
 class MaterialInline(admin.TabularInline):
     model = Material
     extra = 1
+    # activity is auto-set when adding via Activity; required when adding standalone
 
 
 @admin.register(Category)
@@ -20,12 +56,14 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
+    form = TagAdminForm
     list_display = ["name"]
     search_fields = ["name"]
 
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
+    form = ActivityAdminForm
     list_display = ["title", "category", "created_at"]
     list_filter = ["category", "created_at"]
     search_fields = ["title", "description"]
