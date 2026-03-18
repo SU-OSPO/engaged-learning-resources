@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}{{ activity.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        margin-bottom: 2rem;
+    }
+    .detail-header h1 {
+        font-size: 1.75rem;
+        color: var(--su-navy);
+        margin: 0 0 0.5rem;
+    }
+    .detail-meta {
+        font-size: 0.9rem;
+        color: var(--su-gray-dark);
+    }
+    .detail-meta .category {
+        color: var(--su-orange);
+        font-weight: 600;
+    }
+    .detail-content {
+        margin-bottom: 2rem;
+    }
+    .detail-content p {
+        margin: 0 0 1rem;
+    }
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-bottom: 2rem;
+    }
+    .tag {
+        background: var(--su-gray);
+        padding: 0.25rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--su-navy);
+    }
+    .materials-section {
+        background: var(--su-gray);
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+    .materials-section h2 {
+        font-size: 1.1rem;
+        color: var(--su-navy);
+        margin: 0 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--su-orange);
+    }
+    .material-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .material-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .material-item:last-child {
+        border-bottom: none;
+    }
+    .material-info {
+        flex: 1;
+    }
+    .material-info strong {
+        display: block;
+        color: var(--su-navy);
+    }
+    .material-type {
+        font-size: 0.85rem;
+        color: var(--su-gray-dark);
+    }
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        color: var(--su-orange);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .back-link:hover {
+        color: var(--su-orange-dark);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'activities:list' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="back-link">← Back to activities</a>
+
+<header class="detail-header">
+    <h1>{{ activity.title }}</h1>
+    {% if activity.category %}
+    <p class="detail-meta"><span class="category">{{ activity.category }}</span></p>
+    {% endif %}
+</header>
+
+{% if activity.tags.all %}
+<div class="tags">
+    {% for tag in activity.tags.all %}
+    <span class="tag">{{ tag }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="detail-content">
+    {% if activity.description %}
+    {{ activity.description|linebreaks }}
+    {% else %}
+    <p>No description provided.</p>
+    {% endif %}
+</div>
+
+{% if materials %}
+<section class="materials-section">
+    <h2>Materials</h2>
+    <ul class="material-list">
+        {% for m in materials %}
+        <li class="material-item">
+            <div class="material-info">
+                <strong>{{ m.title }}</strong>
+                <span class="material-type">{{ m.material_type }}</span>
+            </div>
+            {% if m.file_url %}
+            <a href="{{ m.file_url }}" class="btn" target="_blank" rel="noopener">Download</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+{% endblock %}

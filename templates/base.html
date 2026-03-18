@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Teaching Activities{% endblock %} | Syracuse University</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --su-orange: #F76900;
+            --su-orange-dark: #D74100;
+            --su-orange-light: #FF8E00;
+            --su-navy: #0D2D4C;
+            --su-navy-light: #1a3d5c;
+            --su-gray: #f5f5f5;
+            --su-gray-dark: #555;
+            --su-white: #ffffff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Source Sans 3', -apple-system, sans-serif;
+            font-size: 16px;
+            line-height: 1.4;
+            color: #333;
+            background: var(--su-white);
+        }
+        .header {
+            background: var(--su-navy);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .header a:hover {
+            color: var(--su-orange-light);
+        }
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .logo span { color: var(--su-orange); }
+        .nav {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--su-navy);
+            margin: 0 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--su-orange);
+        }
+        .footer {
+            background: var(--su-navy);
+            color: rgba(255,255,255,0.9);
+            padding: 2rem;
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: var(--su-orange-light);
+            text-decoration: none;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--su-orange);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .btn:hover {
+            background: var(--su-orange-dark);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--su-orange);
+            color: var(--su-orange);
+        }
+        .btn-outline:hover {
+            background: var(--su-orange);
+            color: white;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="header">
+        <a href="{% url 'activities:list' %}" class="logo">Teaching Activities <span>| Syracuse University</span></a>
+        <nav class="nav">
+            <a href="{% url 'activities:list' %}">Browse Activities</a>
+            <a href="/admin/" target="_blank">Admin</a>
+        </nav>
+    </header>
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">
+        <p>Teaching Activities Platform • Syracuse University • <a href="https://www.syracuse.edu/">syracuse.edu</a></p>
+    </footer>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

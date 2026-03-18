@@ -48,3 +48,8 @@ python manage.py runserver
 - **TagListTests** : list returns all tags
 - **CategoryListTests** : list returns all categories
 
+### Frontend
+- **Django templates** : Syracuse University theme 
+- **Activity list** : search, filter by category/tag, sort, pagination
+- **Activity detail** : description, materials with download links
+- **Responsive** : HTML for browsers, JSON for API requests

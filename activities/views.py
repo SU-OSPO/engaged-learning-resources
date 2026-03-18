@@ -1,5 +1,8 @@
+from urllib.parse import urlencode
+
+from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
 
 from config.error_handlers import json_error_response
@@ -9,53 +12,76 @@ from .models import Activity, Category, Tag
 SORT_FIELDS = {"title", "-title", "created_at", "-created_at"}
 
 
-@require_GET
-def activity_list(request):
-    """
-    List activities with optional search, filters, pagination, and sorting.
-    Query params: q, tag, category, page, limit, sort
-    """
+def _get_filtered_queryset(request):
+    """Build filtered activity queryset from request params."""
     qs = Activity.objects.select_related("category").prefetch_related("tags", "materials")
 
-    # Search by title
     q = request.GET.get("q", "").strip()
     if q:
         qs = qs.filter(title__icontains=q)
 
-    # Filter by tag
     tag_name = request.GET.get("tag", "").strip()
     if tag_name:
         qs = qs.filter(tags__name__iexact=tag_name)
 
-    # Filter by category
     category_id = request.GET.get("category", "").strip()
     if category_id:
         try:
             qs = qs.filter(category_id=int(category_id))
         except ValueError:
-            return json_error_response(400, detail="Invalid category id.")
+            return None, "Invalid category id."
 
-    # Sorting
     sort = request.GET.get("sort", "-created_at").strip()
     if sort in SORT_FIELDS:
         qs = qs.order_by(sort)
     else:
         qs = qs.order_by("-created_at")
 
+    return qs, None
+
+
+@require_GET
+def activity_list(request):
+    """
+    List activities with optional search, filters, pagination, and sorting.
+    Returns HTML for browsers, JSON for API requests.
+    """
+    qs, err = _get_filtered_queryset(request)
+    if err:
+        return json_error_response(400, detail=err)
+
     # Pagination
     try:
-        limit = max(1, min(100, int(request.GET.get("limit", 20))))
+        per_page = max(1, min(100, int(request.GET.get("limit", 20))))
     except ValueError:
-        limit = 20
+        per_page = 20
+    paginator = Paginator(qs, per_page)
     try:
-        page = max(1, int(request.GET.get("page", 1)))
+        page_num = max(1, int(request.GET.get("page", 1)))
     except ValueError:
-        page = 1
-    offset = (page - 1) * limit
+        page_num = 1
+    page_obj = paginator.get_page(page_num)
 
-    total = qs.count()
-    qs = qs[offset : offset + limit]
+    # HTML response
+    if "text/html" in request.META.get("HTTP_ACCEPT", ""):
+        tags = list(Tag.objects.order_by("name").values("id", "name"))
+        categories = list(Category.objects.order_by("name").values("id", "name", "description"))
+        pagination_params = {k: v for k, v in request.GET.items() if k != "page"}
+        pagination_base = urlencode(pagination_params) if pagination_params else ""
+        return render(
+            request,
+            "activities/activity_list.html",
+            {
+                "activities": page_obj.object_list,
+                "page_obj": page_obj,
+                "total": paginator.count,
+                "tags": tags,
+                "categories": categories,
+                "pagination_base": pagination_base,
+            },
+        )
 
+    # JSON response
     activities = [
         {
             "id": a.id,
@@ -67,23 +93,22 @@ def activity_list(request):
             "tags": [t.name for t in a.tags.all()],
             "created_at": a.created_at.isoformat(),
         }
-        for a in qs
+        for a in page_obj.object_list
     ]
-
     return JsonResponse(
         {
             "activities": activities,
             "count": len(activities),
-            "total": total,
-            "page": page,
-            "limit": limit,
+            "total": paginator.count,
+            "page": page_obj.number,
+            "limit": per_page,
         }
     )
 
 
 @require_GET
 def activity_detail(request, slug):
-    """Retrieve a single activity by slug."""
+    """Retrieve a single activity by slug. Returns HTML or JSON."""
     activity = get_object_or_404(
         Activity.objects.select_related("category").prefetch_related("tags", "materials"),
         slug=slug,
@@ -100,6 +125,16 @@ def activity_detail(request, slug):
         for m in activity.materials.all()
     ]
 
+    # HTML response
+    if "text/html" in request.META.get("HTTP_ACCEPT", ""):
+        materials_for_template = [{"title": m["title"], "material_type": m["material_type"], "file_url": m["file_url"]} for m in materials]
+        return render(
+            request,
+            "activities/activity_detail.html",
+            {"activity": activity, "materials": materials_for_template},
+        )
+
+    # JSON response
     return JsonResponse(
         {
             "id": activity.id,
