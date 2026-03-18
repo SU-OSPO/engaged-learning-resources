@@ -1,6 +1,7 @@
 # teaching activities models
 
 from django.db import models
+from django.utils.text import slugify
 
 
 class Category(models.Model):
@@ -37,6 +38,7 @@ class Tag(models.Model):
 class Activity(models.Model):
     # one activity per folder
 
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -58,6 +60,16 @@ class Activity(models.Model):
             models.Index(fields=["category"], name="idx_activity_category_id"),
             models.Index(fields=["created_at"], name="idx_activity_created_at"),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title) or "activity"
+            self.slug = base
+            n = 1
+            while Activity.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{base}-{n}"
+                n += 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

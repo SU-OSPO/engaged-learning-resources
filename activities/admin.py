@@ -64,7 +64,7 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
     form = ActivityAdminForm
-    list_display = ["title", "category", "created_at"]
+    list_display = ["title", "slug", "category", "created_at"]
     list_filter = ["category", "created_at"]
     search_fields = ["title", "description"]
     inlines = [ActivityTagInline, MaterialInline]

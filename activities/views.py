@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET
+
+from config.error_handlers import json_error_response
 from .models import Activity, Category, Tag
 
 
@@ -31,7 +33,7 @@ def activity_list(request):
         try:
             qs = qs.filter(category_id=int(category_id))
         except ValueError:
-            pass
+            return json_error_response(400, detail="Invalid category id.")
 
     # Sorting
     sort = request.GET.get("sort", "-created_at").strip()
@@ -57,6 +59,7 @@ def activity_list(request):
     activities = [
         {
             "id": a.id,
+            "slug": a.slug,
             "title": a.title,
             "description": a.description,
             "category": a.category.name if a.category else None,
@@ -79,11 +82,11 @@ def activity_list(request):
 
 
 @require_GET
-def activity_detail(request, pk):
-    """Retrieve a single activity by id."""
+def activity_detail(request, slug):
+    """Retrieve a single activity by slug."""
     activity = get_object_or_404(
         Activity.objects.select_related("category").prefetch_related("tags", "materials"),
-        pk=pk,
+        slug=slug,
     )
 
     materials = [
@@ -100,6 +103,7 @@ def activity_detail(request, pk):
     return JsonResponse(
         {
             "id": activity.id,
+            "slug": activity.slug,
             "title": activity.title,
             "description": activity.description,
             "category": activity.category.name if activity.category else None,

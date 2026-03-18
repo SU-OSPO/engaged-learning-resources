@@ -71,6 +71,7 @@ class ActivityListTests(TestCase):
         self.assertEqual(data["count"], 2)
         self.assertEqual(data["total"], 2)
         self.assertEqual(len(data["activities"]), 2)
+        self.assertIn("slug", data["activities"][0])
 
     def test_search_by_title(self):
         resp = self.client.get("/activities/", {"q": "Scavenger"})
@@ -103,6 +104,13 @@ class ActivityListTests(TestCase):
         titles = [a["title"] for a in data["activities"]]
         self.assertEqual(titles, ["Scavenger Hunt", "Team Building"])
 
+    def test_400_for_invalid_category(self):
+        resp = self.client.get("/activities/", {"category": "not-a-number"})
+        self.assertEqual(resp.status_code, 400)
+        data = json.loads(resp.content)
+        self.assertEqual(data["status"], 400)
+        self.assertIn("error", data)
+
 
 class ActivityDetailTests(TestCase):
     """Test GET /activities/<id>/ endpoint."""
@@ -115,16 +123,20 @@ class ActivityDetailTests(TestCase):
         )
 
     def test_detail_returns_activity(self):
-        resp = self.client.get(f"/activities/{self.activity.id}/")
+        resp = self.client.get(f"/activities/{self.activity.slug}/")
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
         self.assertEqual(data["title"], "Scavenger Hunt")
+        self.assertEqual(data["slug"], "scavenger-hunt")
         self.assertEqual(data["description"], "Find items outside")
         self.assertIn("materials", data)
 
-    def test_detail_404_for_invalid_id(self):
-        resp = self.client.get("/activities/99999/")
+    def test_detail_404_for_invalid_slug(self):
+        resp = self.client.get("/activities/non-existent-slug/")
         self.assertEqual(resp.status_code, 404)
+        data = json.loads(resp.content)
+        self.assertEqual(data["status"], 404)
+        self.assertIn("error", data)
 
 
 class TagListTests(TestCase):
