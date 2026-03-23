@@ -29,7 +29,7 @@ python manage.py runserver
 ### API
 - **Root** : `/` redirects to `/activities/`
 - **Activities** : `GET /activities/` (list), `GET /activities/<slug>/` (detail with materials, e.g. `/activities/scavenger-hunt/`)
-- **Search & filter** : `?q=`, `?tag=`, `?category=`
+- **Search & filter** : `?q=` (title, description, tags), `?tag=`, `?category=`
 - **Error handling** : 400 (bad request), 404 (not found), 500 (server error) — JSON `{error, status, detail}`
 - **Pagination** : `?page=1&limit=20`
 - **Sorting** : `?sort=title`, `?sort=-created_at`, etc.
@@ -43,13 +43,13 @@ python manage.py runserver
 
 ### Tests
 - **ModelTests** : create category, create tag, tag unique name (DB), activity with category and tags, material linked to activity
-- **ActivityListTests** : list returns all activities, search by title (`?q=`), filter by tag (`?tag=`), filter by category (`?category=`), pagination (`?page=`, `?limit=`), sort by title (`?sort=title`)
+- **ActivityListTests** : list returns all activities, search by title/description/tags (`?q=`), filter by tag (`?tag=`), filter by category (`?category=`), pagination (`?page=`, `?limit=`), sort by title (`?sort=title`)
 - **ActivityDetailTests** : detail returns activity with materials and slug, 404 for invalid slug (JSON), 400 for invalid category
 - **TagListTests** : list returns all tags
 - **CategoryListTests** : list returns all categories
 
 ### Frontend
-- **Django templates** : Syracuse University theme 
-- **Activity list** : search, filter by category/tag, sort, pagination
+- **Django templates** : University theme
+- **Activity list** : search (title, description, tags), filter by category/tag, sort, pagination
 - **Activity detail** : description, materials with download links
 - **Responsive** : HTML for browsers, JSON for API requests

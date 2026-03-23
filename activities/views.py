@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.db.models import Q
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -18,7 +19,11 @@ def _get_filtered_queryset(request):
 
     q = request.GET.get("q", "").strip()
     if q:
-        qs = qs.filter(title__icontains=q)
+        qs = qs.filter(
+            Q(title__icontains=q)
+            | Q(description__icontains=q)
+            | Q(tags__name__icontains=q)
+        ).distinct()
 
     tag_name = request.GET.get("tag", "").strip()
     if tag_name:
