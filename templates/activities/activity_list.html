@@ -32,19 +32,99 @@
         border-color: var(--su-orange);
     }
     .activity-grid {
-        display: grid;
-        gap: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(1rem, 2vw, 1.5rem);
+        width: 100%;
     }
     .activity-card {
+        --card-i: 0;
         background: white;
         border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 1.25rem;
-        transition: box-shadow 0.2s, border-color 0.2s;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+        animation: card-enter 0.5s ease backwards;
+        animation-delay: calc(var(--card-i) * 0.06s);
+    }
+    @media (min-width: 640px) {
+        .activity-card {
+            flex-direction: row;
+            align-items: stretch;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .activity-card {
+            animation: none;
+        }
+    }
+    @keyframes card-enter {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     .activity-card:hover {
         border-color: var(--su-orange);
-        box-shadow: 0 4px 12px rgba(247, 105, 0, 0.15);
+        box-shadow: 0 8px 28px rgba(0, 33, 71, 0.12), 0 4px 12px rgba(247, 105, 0, 0.12);
+    }
+    .card-body {
+        padding: 1.25rem 1.25rem 1.1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+    }
+    .card-body .tags {
+        margin-top: auto;
+        padding-top: 0.5rem;
+    }
+    /* Same aspect box for every card; image fills with object-fit: cover */
+    .card-media {
+        display: block;
+        position: relative;
+        margin: 0;
+        flex-shrink: 0;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border-bottom: 1px solid #eee;
+        background: #e8ecf1;
+    }
+    @media (min-width: 640px) {
+        .card-media {
+            width: 280px;
+            flex: 0 0 280px;
+            max-width: 280px;
+            border-bottom: none;
+            border-right: 1px solid #eee;
+        }
+    }
+    .card-media img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        transition: transform 0.35s ease;
+    }
+    .activity-card:hover .card-media img {
+        transform: scale(1.04);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .activity-card:hover .card-media img {
+            transform: none;
+        }
     }
     .activity-card h2 {
         margin: 0 0 0.5rem;
@@ -65,6 +145,14 @@
     .activity-meta .category {
         color: var(--su-orange);
         font-weight: 600;
+    }
+    .card-desc {
+        margin: 0 0 0.75rem;
+        line-height: 1.5;
+        color: #333;
+    }
+    .card-actions {
+        margin: 0.75rem 0 0;
     }
     .tags {
         display: flex;
@@ -162,26 +250,33 @@
 
 <p class="results-count">{{ total }} activit{{ total|pluralize:"y,ies" }} found</p>
 
-{% if activities %}
+{% if activity_rows %}
 <div class="activity-grid">
-    {% for activity in activities %}
-    <article class="activity-card">
-        <h2><a href="{% url 'activities:detail' activity.slug %}">{{ activity.title }}</a></h2>
-        {% if activity.category %}
-        <p class="activity-meta"><span class="category">{{ activity.category }}</span></p>
-        {% endif %}
-        {% if activity.description %}
-        <p>{{ activity.description|truncatewords:30 }}</p>
-        {% endif %}
-        {% if activity.tags.all %}
-        <div class="tags">
-            {% for tag in activity.tags.all %}
-            <span class="tag">{{ tag }}</span>
-            {% endfor %}
+    {% for row in activity_rows %}
+    {% with activity=row.activity %}
+    <article class="activity-card" style="--card-i: {{ forloop.counter0 }}">
+        <a href="{% url 'activities:detail' activity.slug %}" class="card-media" aria-label="View activity: {{ activity.title }}">
+            <img src="{{ row.tile_image }}" alt="" loading="lazy" decoding="async" width="800" height="600" fetchpriority="low">
+        </a>
+        <div class="card-body">
+            <h2><a href="{% url 'activities:detail' activity.slug %}">{{ activity.title }}</a></h2>
+            {% if activity.category %}
+            <p class="activity-meta"><span class="category">{{ activity.category }}</span></p>
+            {% endif %}
+            {% if activity.description %}
+            <p class="card-desc">{{ activity.description|truncatewords:36 }}</p>
+            {% endif %}
+            {% if activity.tags.all %}
+            <div class="tags">
+                {% for tag in activity.tags.all %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <p class="card-actions"><a href="{% url 'activities:detail' activity.slug %}" class="btn btn-outline">View details →</a></p>
         </div>
-        {% endif %}
-        <p style="margin-top: 0.75rem;"><a href="{% url 'activities:detail' activity.slug %}" class="btn btn-outline">View details →</a></p>
     </article>
+    {% endwith %}
     {% endfor %}
 </div>
 

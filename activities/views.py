@@ -1,16 +1,157 @@
-from urllib.parse import urlencode
+import mimetypes
+import os
+from urllib.parse import quote, urlencode
 
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET
 
 from config.error_handlers import json_error_response
-from .models import Activity, Category, Tag
+from .models import Activity, Category, Material, Tag
+from .tile_images import tile_image_url
 
 
 SORT_FIELDS = {"title", "-title", "created_at", "-created_at"}
+
+# Fallback when mimetypes.guess_type is wrong or returns None (common cause of
+# "open in new tab" downloading as attachment-like behavior).
+_EXT_FALLBACK = {
+    "pdf": "application/pdf",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "gif": "image/gif",
+    "webp": "image/webp",
+    "svg": "image/svg+xml",
+    "bmp": "image/bmp",
+    "mp4": "video/mp4",
+    "webm": "video/webm",
+    "ogg": "video/ogg",
+    "txt": "text/plain; charset=utf-8",
+    "md": "text/plain; charset=utf-8",
+    "csv": "text/csv; charset=utf-8",
+    "doc": "application/msword",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "xls": "application/vnd.ms-excel",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "ppt": "application/vnd.ms-powerpoint",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "odt": "application/vnd.oasis.opendocument.text",
+    "ods": "application/vnd.oasis.opendocument.spreadsheet",
+    "odp": "application/vnd.oasis.opendocument.presentation",
+}
+
+
+def _content_type_for_filename(name):
+    """Prefer extension map (reliable); mimetypes alone often yields octet-stream + nosniff → download."""
+    base = os.path.basename(name)
+    ext = base.rsplit(".", 1)[-1].lower() if "." in base else ""
+    if ext in _EXT_FALLBACK:
+        return _EXT_FALLBACK[ext]
+    ctype, _ = mimetypes.guess_type(base)
+    if ctype and ctype != "application/octet-stream":
+        return ctype
+    return ctype or "application/octet-stream"
+
+
+def _preview_kind(file_field_name):
+    """Return preview type for inline browser display."""
+    if not file_field_name:
+        return "none"
+    ext = file_field_name.rsplit(".", 1)[-1].lower() if "." in file_field_name else ""
+    if ext == "pdf":
+        return "pdf"
+    if ext in ("jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"):
+        return "image"
+    if ext in ("mp4", "webm", "ogg"):
+        return "video"
+    if ext in ("txt", "md", "csv"):
+        return "text"
+    # Word / Excel / PowerPoint — preview via Office Online when URL is public
+    if ext in ("doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp"):
+        return "office"
+    return "none"
+
+
+def _is_localhost_request(request):
+    host = request.get_host().split(":")[0].lower()
+    return host in ("localhost", "127.0.0.1", "[::1]")
+
+
+def _material_dict(m, request):
+    fname = m.file.name if m.file else ""
+    kind = _preview_kind(fname)
+    file_open_url = None
+    file_download_url = None
+    if m.file:
+        file_open_url = request.build_absolute_uri(
+            reverse("activities:material_open", kwargs={"material_id": m.id})
+        )
+        file_download_url = request.build_absolute_uri(
+            reverse("activities:material_download", kwargs={"material_id": m.id})
+        )
+    d = {
+        "id": m.id,
+        "title": m.title,
+        "material_type": m.get_material_type_display(),
+        "material_type_key": m.material_type,
+        "file_url": file_open_url,
+        "file_open_url": file_open_url,
+        "file_download_url": file_download_url,
+        "uploaded_at": m.uploaded_at.isoformat(),
+        "preview_kind": kind,
+    }
+    if kind == "office" and file_open_url:
+        d["office_embed_src"] = quote(file_open_url, safe="")
+        d["office_preview_blocked_local"] = _is_localhost_request(request)
+    else:
+        d["office_embed_src"] = None
+        d["office_preview_blocked_local"] = False
+    return d
+
+
+def _serve_material(request, material_id, *, as_attachment):
+    m = get_object_or_404(Material, pk=material_id)
+    if not m.file:
+        raise Http404
+    fs_path = m.file.path
+    if not os.path.isfile(fs_path):
+        raise Http404
+    basename = os.path.basename(m.file.name)
+    content_type = _content_type_for_filename(m.file.name)
+    response = FileResponse(
+        open(fs_path, "rb"),
+        as_attachment=as_attachment,
+        filename=basename,
+        content_type=content_type,
+    )
+    if not as_attachment:
+        # Minimal disposition; some clients are picky about filename= with inline.
+        response.headers["Content-Disposition"] = "inline"
+    return response
+
+
+@xframe_options_sameorigin
+@require_GET
+def material_open(request, material_id):
+    """Serve file with Content-Disposition: inline so browsers display PDF/images/video in-tab."""
+    return _serve_material(request, material_id, as_attachment=False)
+
+
+@require_GET
+def material_download(request, material_id):
+    """Serve file with Content-Disposition: attachment for an explicit download."""
+    return _serve_material(request, material_id, as_attachment=True)
+
+
+@require_GET
+def home(request):
+    """Landing page describing the teaching activities platform."""
+    return render(request, "home.html")
 
 
 def _get_filtered_queryset(request):
@@ -73,11 +214,15 @@ def activity_list(request):
         categories = list(Category.objects.order_by("name").values("id", "name", "description"))
         pagination_params = {k: v for k, v in request.GET.items() if k != "page"}
         pagination_base = urlencode(pagination_params) if pagination_params else ""
+        activity_rows = [
+            {"activity": a, "tile_image": tile_image_url(a)}
+            for a in page_obj.object_list
+        ]
         return render(
             request,
             "activities/activity_list.html",
             {
-                "activities": page_obj.object_list,
+                "activity_rows": activity_rows,
                 "page_obj": page_obj,
                 "total": paginator.count,
                 "tags": tags,
@@ -119,24 +264,14 @@ def activity_detail(request, slug):
         slug=slug,
     )
 
-    materials = [
-        {
-            "id": m.id,
-            "title": m.title,
-            "material_type": m.get_material_type_display(),
-            "file_url": request.build_absolute_uri(m.file.url) if m.file else None,
-            "uploaded_at": m.uploaded_at.isoformat(),
-        }
-        for m in activity.materials.all()
-    ]
+    materials = [_material_dict(m, request) for m in activity.materials.all()]
 
     # HTML response
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
-        materials_for_template = [{"title": m["title"], "material_type": m["material_type"], "file_url": m["file_url"]} for m in materials]
         return render(
             request,
             "activities/activity_detail.html",
-            {"activity": activity, "materials": materials_for_template},
+            {"activity": activity, "materials": materials},
         )
 
     # JSON response

@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Softer page background on the home page only */
+    body {
+        background: #e8ecf1;
+    }
+    .home {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .home-hero {
+        position: relative;
+        background: linear-gradient(145deg, var(--su-navy) 0%, #0c2840 50%, var(--su-navy-light) 100%);
+        color: #fff;
+        border-radius: 12px;
+        padding: 2.75rem 2rem 2.5rem;
+        margin-bottom: 2.5rem;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(13, 45, 76, 0.2);
+        isolation: isolate;
+    }
+    .home-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse 80% 60% at 100% 0%, rgba(247, 105, 0, 0.15) 0%, transparent 55%);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .home-hero-inner {
+        position: relative;
+        z-index: 1;
+    }
+    .home-hero-brand {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        opacity: 0;
+        animation: home-fade-up 0.65s ease forwards;
+        border-left: 4px solid var(--su-orange);
+        padding-left: 1rem;
+    }
+    .home-hero-brand-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        min-width: 0;
+    }
+    .home-kicker {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--su-orange-light);
+        margin: 0 0 0.5rem;
+    }
+    .home-hero h1 {
+        font-size: clamp(1.65rem, 4vw, 2.15rem);
+        font-weight: 700;
+        line-height: 1.2;
+        margin: 0 0 1rem;
+        max-width: 32ch;
+        opacity: 0;
+        animation: home-fade-up 0.65s ease 0.08s forwards;
+    }
+    .home-lead {
+        font-size: 1.05rem;
+        line-height: 1.55;
+        color: rgba(255, 255, 255, 0.92);
+        margin: 0 0 1.5rem;
+        max-width: none;
+        width: 100%;
+        hyphens: none;
+        -webkit-hyphens: none;
+        opacity: 0;
+        animation: home-fade-up 0.65s ease 0.16s forwards;
+    }
+    .home-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        opacity: 0;
+        animation: home-fade-up 0.65s ease 0.24s forwards;
+    }
+    .home-hero-actions .btn {
+        padding: 0.65rem 1.25rem;
+        font-size: 1rem;
+    }
+    .home-hero-actions .btn-outline {
+        border-color: rgba(255, 255, 255, 0.85);
+        color: #fff;
+    }
+    .home-hero-actions .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: #fff;
+        color: #fff;
+    }
+    .home-hero-brand-text .home-rule {
+        margin-bottom: 0;
+    }
+    .home-rule {
+        height: 3px;
+        width: 0;
+        max-width: 72px;
+        background: var(--su-orange);
+        border-radius: 2px;
+        margin: 0;
+        animation: home-rule-grow 0.85s ease 0.35s forwards;
+    }
+    @keyframes home-fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @keyframes home-rule-grow {
+        to { width: 72px; }
+    }
+    @keyframes home-card-in {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .home-hero-brand,
+        .home-hero h1,
+        .home-lead,
+        .home-hero-actions,
+        .home-feature,
+        .home-about-block {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+        .home-rule {
+            animation: none !important;
+            width: 72px;
+        }
+    }
+    .home-about {
+        margin-bottom: 2.5rem;
+    }
+    .home-about-block {
+        opacity: 0;
+        animation: home-card-in 0.6s ease 0.4s forwards;
+    }
+    .home-about-block h2 {
+        font-size: 1.35rem;
+        color: var(--su-navy);
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+    }
+    .home-about-block p {
+        margin: 0;
+        color: #444;
+        line-height: 1.65;
+    }
+    .home-features {
+        display: grid;
+        gap: 1.25rem;
+        margin-bottom: 2.5rem;
+    }
+    @media (min-width: 640px) {
+        .home-features {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    .home-feature {
+        background: var(--su-gray);
+        border: 1px solid #e8e8e8;
+        border-radius: 10px;
+        padding: 1.35rem 1.25rem;
+        opacity: 0;
+        animation: home-card-in 0.55s ease forwards;
+    }
+    .home-feature:nth-child(1) { animation-delay: 0.45s; }
+    .home-feature:nth-child(2) { animation-delay: 0.55s; }
+    .home-feature:nth-child(3) { animation-delay: 0.65s; }
+    .home-feature-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 8px;
+        background: rgba(247, 105, 0, 0.12);
+        color: var(--su-orange);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.85rem;
+    }
+    .home-feature h3 {
+        font-size: 1.05rem;
+        color: var(--su-navy);
+        margin: 0 0 0.5rem;
+        font-weight: 700;
+    }
+    .home-feature p {
+        margin: 0;
+        font-size: 0.92rem;
+        color: var(--su-gray-dark);
+        line-height: 1.5;
+    }
+    .home-bottom {
+        text-align: center;
+        padding: 1.75rem 1.25rem;
+        background: linear-gradient(180deg, var(--su-gray) 0%, #fff 100%);
+        border-radius: 10px;
+        border: 1px solid #e8e8e8;
+        opacity: 0;
+        animation: home-card-in 0.55s ease 0.75s forwards;
+    }
+    .home-bottom p {
+        margin: 0 0 1rem;
+        color: var(--su-gray-dark);
+        font-size: 0.98rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="home">
+    <section class="home-hero" aria-labelledby="home-heading">
+        <div class="home-hero-inner">
+            <div class="home-hero-brand">
+                <div class="home-hero-brand-text">
+                    <p class="home-kicker">Syracuse University</p>
+                    <div class="home-rule" aria-hidden="true"></div>
+                </div>
+            </div>
+            <h1 id="home-heading">Teaching activities for faculty</h1>
+            <p class="home-lead">
+                This site helps Syracuse instructors discover peer shared teaching ideas: browse by topic or tag, read full descriptions, and download materials. Content is maintained by your colleagues through the admin workspace.
+            </p>
+            <div class="home-hero-actions">
+                <a href="{% url 'activities:list' %}" class="btn">Browse activities</a>
+                <a href="https://www.syracuse.edu/" class="btn btn-outline" target="_blank" rel="noopener noreferrer">Syracuse.edu</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-about" aria-labelledby="about-heading">
+        <div class="home-about-block">
+            <h2 id="about-heading">What you’ll find here</h2>
+            <p>
+                Each activity includes a title, description, category, and tags so you can search and filter quickly.
+                Detail pages show downloadable handouts, slides, and other files with previews when your browser supports them, so you can evaluate a resource before using it in class.
+            </p>
+        </div>
+    </section>
+
+    <section class="home-features" aria-label="Key features">
+        <article class="home-feature">
+            <div class="home-feature-icon" aria-hidden="true">1</div>
+            <h3>Search and filter</h3>
+            <p>Find activities by keyword, tag, or category, and sort to match how you like to browse.</p>
+        </article>
+        <article class="home-feature">
+            <div class="home-feature-icon" aria-hidden="true">2</div>
+            <h3>Materials in one place</h3>
+            <p>PDFs, images, video, and text previews where supported, plus a clear download when you need the file.</p>
+        </article>
+        <article class="home-feature">
+            <div class="home-feature-icon" aria-hidden="true">3</div>
+            <h3>Faculty managed</h3>
+            <p>Contributors update activities through the secure admin interface; this public view stays easy to read.</p>
+        </article>
+    </section>
+
+    <section class="home-bottom">
+        <p>Ready to explore?</p>
+        <a href="{% url 'activities:list' %}" class="btn">Go to activity list</a>
+    </section>
+</div>
+{% endblock %}

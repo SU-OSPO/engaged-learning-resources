@@ -109,8 +109,9 @@
 </head>
 <body>
     <header class="header">
-        <a href="{% url 'activities:list' %}" class="logo">Teaching Activities <span>| Syracuse University</span></a>
+        <a href="{% url 'home' %}" class="logo">Teaching Activities <span>| Syracuse University</span></a>
         <nav class="nav">
+            <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'activities:list' %}">Browse Activities</a>
             <a href="/admin/" target="_blank">Admin</a>
         </nav>

@@ -27,7 +27,7 @@ python manage.py runserver
 - **Validation** : no duplicate tags (case-insensitive), required activity title, material linked to activity
 
 ### API
-- **Root** : `/` redirects to `/activities/`
+- **Root** : `GET /` — home page (HTML)
 - **Activities** : `GET /activities/` (list), `GET /activities/<slug>/` (detail with materials, e.g. `/activities/scavenger-hunt/`)
 - **Search & filter** : `?q=` (title, description, tags), `?tag=`, `?category=`
 - **Error handling** : 400 (bad request), 404 (not found), 500 (server error) — JSON `{error, status, detail}`
@@ -35,7 +35,7 @@ python manage.py runserver
 - **Sorting** : `?sort=title`, `?sort=-created_at`, etc.
 - **Tags** : `GET /tags/`
 - **Categories** : `GET /categories/`
-- **Materials** : `file_url` in activity detail returns absolute URLs for download
+- **Materials** : JSON includes `file_open_url` (inline view) and `file_download_url` (attachment); both point at app routes under `/activities/materials/<id>/open/` and `.../download/`
 
 ### Media & performance
 - **Media serving** : files at `/media/` in development
@@ -50,6 +50,19 @@ python manage.py runserver
 
 ### Frontend
 - **Django templates** : University theme
-- **Activity list** : search (title, description, tags), filter by category/tag, sort, pagination
-- **Activity detail** : description, materials with download links
+- **Activity list** : search (title, description, tags), filter by category/tag, sort, pagination, category-based icons, card cover images (see below)
+- **Activity detail** : inline previews where the browser supports the type, plus a **Download** link; material type icons per file
 - **Responsive** : HTML for browsers, JSON for API requests
+
+#### Why a preview might not show
+- **PDF, images, video, plain text** : Served from this app with `Content-Disposition: inline` so they usually preview on the activity page, including on `localhost`, as long as the file exists under `media/`.
+- **Word, Excel, PowerPoint, ODF** : Preview uses **Microsoft Office Online** (`view.officeapps.live.com`) in an iframe. That service must **fetch your file’s URL from the public internet** over **HTTPS**, with **no login**. It cannot reach a dev server that only listens on your laptop, so on **`localhost`** the Office embed is **not shown** (you can still **Download**). After deployment to a real HTTPS URL, previews work if the open URL is world-readable.
+- **Other file types** : No inline preview; use **Download**.
+
+#### List card images (what we use)
+All cover photos are **hotlinked from Unsplash** (`images.unsplash.com`) under the [Unsplash License](https://unsplash.com/license), with `auto=format&fit=crop&w=800&h=600&q=80` for consistent card size.
+
+- **Default** : A fixed pool of **12 education-themed** photos. Each activity gets a **stable** image: `activity.id % 12` picks from that pool (see `activities/tile_images.py`).
+- **Optional themed tiles** (same Unsplash source): if title, description, slug, category, or tags match certain phrases, the card uses a dedicated photo instead — e.g. scavenger / treasure / clues → map image; puzzle / jigsaw / riddle → jigsaw image; outdoor / hiking / team-building style phrases → outdoor group image. Copy that mentions **recruitment** / **recruiting** keeps the default pool image so tiles stay predictable.
+
+Attribution: follow Unsplash’s guidelines when sharing; photographer names are listed on each photo’s page at unsplash.com.

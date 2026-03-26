@@ -19,13 +19,12 @@ handler500 = "config.error_handlers.handler500"
 
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from activities import views as activities_views
 
 urlpatterns = [
-    path("", RedirectView.as_view(url="/activities/", permanent=False)),
+    path("", activities_views.home, name="home"),
     path("admin/", admin.site.urls),
     path("activities/", include("activities.urls")),
     path("tags/", activities_views.tag_list),

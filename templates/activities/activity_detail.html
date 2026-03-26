@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load activity_icons %}
 
 {% block title %}{{ activity.title }}{% endblock %}
 
@@ -56,18 +57,30 @@
         padding: 0;
         margin: 0;
     }
-    .material-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #e0e0e0;
+    .material-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 1.25rem;
+        overflow: hidden;
     }
-    .material-item:last-child {
-        border-bottom: none;
+    .material-card:last-child {
+        margin-bottom: 0;
+    }
+    .material-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        flex-wrap: wrap;
+    }
+    .mat-emoji {
+        font-size: 1.35rem;
+        line-height: 1.2;
     }
     .material-info {
         flex: 1;
+        min-width: 0;
     }
     .material-info strong {
         display: block;
@@ -76,6 +89,56 @@
     .material-type {
         font-size: 0.85rem;
         color: var(--su-gray-dark);
+    }
+    .material-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .preview-wrap {
+        border-top: 1px solid #e8e8e8;
+        background: #fafafa;
+        min-height: 200px;
+        max-height: 70vh;
+    }
+    .preview-wrap iframe {
+        width: 100%;
+        height: min(70vh, 600px);
+        border: none;
+        display: block;
+    }
+    .preview-wrap img {
+        max-width: 100%;
+        max-height: min(70vh, 600px);
+        width: auto;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+    .preview-wrap video {
+        width: 100%;
+        max-height: min(70vh, 500px);
+        display: block;
+    }
+    .preview-text {
+        padding: 1rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+        overflow: auto;
+        max-height: 400px;
+    }
+    .preview-note {
+        padding: 1rem;
+        font-size: 0.9rem;
+        color: var(--su-gray-dark);
+        margin: 0;
+    }
+    .preview-hint {
+        font-size: 0.8rem;
+        padding-top: 0;
+        margin-top: -0.25rem;
     }
     .back-link {
         display: inline-block;
@@ -121,13 +184,46 @@
     <h2>Materials</h2>
     <ul class="material-list">
         {% for m in materials %}
-        <li class="material-item">
-            <div class="material-info">
-                <strong>{{ m.title }}</strong>
-                <span class="material-type">{{ m.material_type }}</span>
+        <li class="material-card">
+            <div class="material-head">
+                <span class="mat-emoji" aria-hidden="true">{{ m.material_type_key|material_type_emoji }}</span>
+                <div class="material-info">
+                    <strong>{{ m.title }}</strong>
+                    <span class="material-type">{{ m.material_type }}</span>
+                </div>
+                {% if m.file_download_url %}
+                <div class="material-actions">
+                    <a href="{{ m.file_download_url }}" class="btn">Download</a>
+                </div>
+                {% endif %}
             </div>
-            {% if m.file_url %}
-            <a href="{{ m.file_url }}" class="btn" target="_blank" rel="noopener">Download</a>
+            {% if m.file_open_url %}
+                {% if m.preview_kind == "pdf" %}
+                <div class="preview-wrap">
+                    <iframe src="{{ m.file_open_url }}" title="PDF preview of {{ m.title }}"></iframe>
+                </div>
+                {% elif m.preview_kind == "image" %}
+                <div class="preview-wrap">
+                    <img src="{{ m.file_open_url }}" alt="Preview: {{ m.title }}">
+                </div>
+                {% elif m.preview_kind == "video" %}
+                <div class="preview-wrap">
+                    <video controls preload="metadata" src="{{ m.file_open_url }}">Your browser does not support video.</video>
+                </div>
+                {% elif m.preview_kind == "text" %}
+                <div class="preview-wrap">
+                    <iframe src="{{ m.file_open_url }}" title="Text preview"></iframe>
+                </div>
+                {% elif m.preview_kind == "office" %}
+                    {% if not m.office_preview_blocked_local %}
+                    <div class="preview-wrap">
+                        <iframe src="https://view.officeapps.live.com/op/embed.aspx?src={{ m.office_embed_src }}" title="Office document preview"></iframe>
+                    </div>
+                    <p class="preview-note preview-hint">If the preview stays blank, the file URL must be reachable from the internet (HTTPS, no auth).</p>
+                    {% endif %}
+                {% else %}
+                <p class="preview-note">No inline preview for this file type. Use <strong>Download</strong> to open it.</p>
+                {% endif %}
             {% endif %}
         </li>
         {% endfor %}
