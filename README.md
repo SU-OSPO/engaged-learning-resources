@@ -49,9 +49,11 @@ python manage.py runserver
 - **CategoryListTests** : list returns all categories
 
 ### Frontend
-- **Django templates** : University theme
-- **Activity list** : search (title, description, tags), filter by category/tag, sort, pagination, category-based icons, card cover images (see below)
-- **Activity detail** : inline previews where the browser supports the type, plus a **Download** link; material type icons per file
+- **Django templates** : Syracuse-inspired palette (navy `#0D2D4C`, orange `#F76900`), Source Sans 3, shared layout in `templates/base.html`
+- **Home** : `GET /` — landing page (`templates/home.html`) with hero and links into browse
+- **Activity list** : filter panel with search, category, tag, sort; **Apply filters** and optional **Clear all filters** when any filter is active; results count; pagination; activity cards with cover image, tags as chips, staggered entrance animation
+- **Activity detail** : inline previews where the browser supports the type, plus **Download**; emoji-style icons per material type (`activities/templatetags/activity_icons.py`)
+- **UI polish** : nav link underline on hover; button hover shadows; tag chips with hover lift; filter panel uses layered navy/orange gradients and a slow background drift (disabled when `prefers-reduced-motion`); reduced-motion respected across list/detail
 - **Responsive** : HTML for browsers, JSON for API requests
 
 #### Why a preview might not show

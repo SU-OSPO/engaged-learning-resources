@@ -18,6 +18,7 @@
             --su-gray: #f5f5f5;
             --su-gray-dark: #555;
             --su-white: #ffffff;
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
         }
         * { box-sizing: border-box; }
         body {
@@ -55,6 +56,27 @@
             display: flex;
             gap: 1.5rem;
         }
+        .nav a {
+            position: relative;
+            padding: 0.2rem 0;
+        }
+        .nav a::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--su-orange-light), var(--su-orange));
+            border-radius: 1px;
+            transition: width 0.28s var(--ease-out);
+        }
+        .nav a:hover::after {
+            width: 100%;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .nav a::after { transition: none; }
+        }
         .main {
             max-width: 1200px;
             margin: 0 auto;
@@ -86,23 +108,88 @@
             background: var(--su-orange);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
             font-size: 0.9rem;
+            transition: background 0.2s ease, transform 0.2s var(--ease-out), box-shadow 0.2s ease;
         }
         .btn:hover {
             background: var(--su-orange-dark);
+            box-shadow: 0 4px 14px rgba(247, 105, 0, 0.35);
+        }
+        .btn:active {
+            transform: translateY(1px);
         }
         .btn-outline {
             background: transparent;
             border: 2px solid var(--su-orange);
             color: var(--su-orange);
+            box-shadow: none;
         }
         .btn-outline:hover {
             background: var(--su-orange);
             color: white;
+            box-shadow: 0 4px 14px rgba(247, 105, 0, 0.25);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .btn, .btn-outline { transition: background 0.2s ease, color 0.2s ease; }
+            .btn:active { transform: none; }
+        }
+        /* Tag chips — used on list + detail */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            align-items: center;
+        }
+        .tag.tag-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: none;
+            color: var(--su-navy);
+            background: linear-gradient(145deg, #f4f7fa 0%, #e8eef4 100%);
+            border: 1px solid rgba(13, 45, 76, 0.12);
+            box-shadow: 0 1px 2px rgba(13, 45, 76, 0.04);
+            transition: transform 0.22s var(--ease-out), box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+            animation: tag-enter 0.45s var(--ease-out) backwards;
+            animation-delay: calc(var(--tag-i, 0) * 0.055s);
+        }
+        .tag.tag-chip:hover {
+            transform: translateY(-2px);
+            border-color: rgba(247, 105, 0, 0.45);
+            box-shadow: 0 6px 16px rgba(13, 45, 76, 0.1);
+            background: linear-gradient(145deg, #fff 0%, #f0f5f9 100%);
+        }
+        .tags .tag.tag-chip:nth-child(6n + 1) { border-left: 3px solid rgba(247, 105, 0, 0.65); padding-left: calc(0.85rem - 2px); }
+        .tags .tag.tag-chip:nth-child(6n + 2) { border-left: 3px solid rgba(13, 45, 76, 0.35); padding-left: calc(0.85rem - 2px); }
+        .tags .tag.tag-chip:nth-child(6n + 3) { border-left: 3px solid rgba(255, 142, 0, 0.55); padding-left: calc(0.85rem - 2px); }
+        .tags .tag.tag-chip:nth-child(6n + 4) { border-left: 3px solid rgba(26, 61, 92, 0.5); padding-left: calc(0.85rem - 2px); }
+        .tags .tag.tag-chip:nth-child(6n + 5) { border-left: 3px solid rgba(247, 105, 0, 0.4); padding-left: calc(0.85rem - 2px); }
+        .tags .tag.tag-chip:nth-child(6n + 6) { border-left: 3px solid rgba(13, 45, 76, 0.22); padding-left: calc(0.85rem - 2px); }
+        @keyframes tag-enter {
+            from {
+                opacity: 0;
+                transform: translateY(6px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .tag.tag-chip {
+                animation: none;
+            }
+            .tag.tag-chip:hover {
+                transform: none;
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}

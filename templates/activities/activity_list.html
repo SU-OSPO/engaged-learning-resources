@@ -4,32 +4,273 @@
 
 {% block extra_css %}
 <style>
-    .filters {
-        background: var(--su-gray);
-        padding: 1rem;
-        border-radius: 8px;
+    body {
+        background: linear-gradient(180deg, #f7f9fb 0%, #ffffff 45%, #fafbfc 100%);
+    }
+    .page-title {
+        animation: title-in 0.55s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) backwards;
+    }
+    @keyframes title-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .page-title { animation: none; }
+    }
+    .filters-panel {
         margin-bottom: 2rem;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(13, 45, 76, 0.1);
+        box-shadow: 0 8px 32px rgba(13, 45, 76, 0.07), 0 2px 8px rgba(13, 45, 76, 0.04);
+        animation: filters-in 0.5s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) 0.08s backwards;
+    }
+    .filters-panel::before {
+        content: "";
+        display: block;
+        height: 4px;
+        background: linear-gradient(90deg, var(--su-navy) 0%, var(--su-orange) 55%, var(--su-orange-light) 100%);
+    }
+    @keyframes filters-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .filters-panel { animation: none; }
+    }
+    .filters-panel-inner {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        padding: 0;
+        background:
+            radial-gradient(ellipse 90% 70% at 100% 0%, rgba(247, 105, 0, 0.12) 0%, transparent 52%),
+            radial-gradient(ellipse 70% 55% at 0% 100%, rgba(13, 45, 76, 0.09) 0%, transparent 48%),
+            linear-gradient(155deg, #feffff 0%, #eef3f8 42%, #f5f8fb 100%);
+    }
+    .filters-panel-inner::before {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background:
+            radial-gradient(circle at 25% 35%, rgba(247, 105, 0, 0.09) 0%, transparent 42%),
+            radial-gradient(circle at 75% 65%, rgba(26, 61, 92, 0.11) 0%, transparent 44%),
+            radial-gradient(circle at 50% 50%, rgba(255, 142, 0, 0.05) 0%, transparent 50%);
+        animation: filters-bg-drift 22s ease-in-out infinite alternate;
+        pointer-events: none;
+        z-index: 0;
+    }
+    @keyframes filters-bg-drift {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(3%, -2%) rotate(1.5deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .filters-panel-inner::before { animation: none; }
+    }
+    .filters-header {
+        position: relative;
+        z-index: 1;
         display: flex;
         flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
         gap: 1rem;
-        align-items: flex-end;
+        padding: 1.25rem 1.35rem 0.75rem;
+        border-bottom: 1px solid rgba(13, 45, 76, 0.08);
     }
-    .filters label {
-        display: block;
+    .filters-header-main {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+        min-width: 0;
+        flex: 1;
+    }
+    .filters-header-icon {
+        flex-shrink: 0;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 10px;
+        background: linear-gradient(145deg, rgba(13, 45, 76, 0.08) 0%, rgba(247, 105, 0, 0.12) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--su-navy);
+    }
+    .filters-header-icon svg {
+        width: 1.25rem;
+        height: 1.25rem;
+        opacity: 0.9;
+    }
+    .filters-header-text {
+        flex: 1;
+        min-width: 0;
+    }
+    .filters-header-title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem 1.25rem;
+    }
+    .filters-heading {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--su-navy);
+        letter-spacing: -0.02em;
+        flex-shrink: 0;
+        line-height: 1.25;
+    }
+    .filters-caption {
+        margin: 0;
+        font-size: 0.875rem;
+        line-height: 1.45;
+        color: var(--su-gray-dark);
+        flex: 1;
+        min-width: min(100%, 12rem);
+        padding: 0.15rem 0 0.15rem 1rem;
+        border-left: 3px solid rgba(247, 105, 0, 0.45);
+    }
+    @media (max-width: 640px) {
+        .filters-header-title-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .filters-caption {
+            border-left: none;
+            padding-left: 0;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(13, 45, 76, 0.1);
+            width: 100%;
+        }
+    }
+    .filters-clear {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.85rem;
         font-size: 0.85rem;
         font-weight: 600;
         color: var(--su-navy);
-        margin-bottom: 0.25rem;
+        text-decoration: none;
+        border-radius: 8px;
+        border: 1px solid rgba(13, 45, 76, 0.18);
+        background: #fff;
+        transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        white-space: nowrap;
     }
-    .filters input, .filters select {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .filters-clear:hover {
+        border-color: var(--su-orange);
+        color: var(--su-orange);
+        box-shadow: 0 2px 10px rgba(247, 105, 0, 0.15);
+    }
+    .filters-clear svg {
+        width: 0.9rem;
+        height: 0.9rem;
+        flex-shrink: 0;
+    }
+    .filters-form {
+        position: relative;
+        z-index: 1;
+        padding: 1.15rem 1.35rem 1.35rem;
+    }
+    .filters-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem 1.25rem;
+    }
+    @media (min-width: 520px) {
+        .filters-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .filters-field--search {
+            grid-column: 1 / -1;
+        }
+    }
+    @media (min-width: 900px) {
+        .filters-grid {
+            grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(0, 1fr));
+            align-items: end;
+        }
+        .filters-field--search {
+            grid-column: auto;
+        }
+    }
+    .filters-field label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--su-navy);
+        margin-bottom: 0.4rem;
+    }
+    .filters-field label .lbl-icon {
+        display: inline-flex;
+        color: var(--su-orange);
+        opacity: 0.85;
+    }
+    .filters-field label .lbl-icon svg {
+        width: 0.95rem;
+        height: 0.95rem;
+        display: block;
+    }
+    .filters-field input,
+    .filters-field select {
+        width: 100%;
+        min-height: 2.65rem;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid rgba(13, 45, 76, 0.15);
+        border-radius: 8px;
         font-size: 0.95rem;
+        font-family: inherit;
+        background: #fff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .filters input:focus, .filters select:focus {
+    .filters-field select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230D2D4C' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        padding-right: 2.25rem;
+    }
+    .filters-field input:focus,
+    .filters-field select:focus {
         outline: none;
         border-color: var(--su-orange);
+        box-shadow: 0 0 0 3px rgba(247, 105, 0, 0.18);
+    }
+    .filters-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding-top: 1.1rem;
+        border-top: 1px solid rgba(13, 45, 76, 0.07);
+    }
+    .filters-footer .btn {
+        padding: 0.6rem 1.35rem;
+        font-size: 0.95rem;
+    }
+    .filters-hint {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--su-gray-dark);
+        max-width: 36ch;
+        line-height: 1.4;
+    }
+    .filters-hint kbd {
+        font-family: inherit;
+        font-size: 0.78em;
+        padding: 0.1em 0.4em;
+        border-radius: 4px;
+        background: rgba(13, 45, 76, 0.06);
+        border: 1px solid rgba(13, 45, 76, 0.1);
     }
     .activity-grid {
         display: flex;
@@ -60,6 +301,9 @@
         .activity-card {
             animation: none;
         }
+        .activity-card:hover {
+            transform: none;
+        }
     }
     @keyframes card-enter {
         from {
@@ -73,7 +317,8 @@
     }
     .activity-card:hover {
         border-color: var(--su-orange);
-        box-shadow: 0 8px 28px rgba(0, 33, 71, 0.12), 0 4px 12px rgba(247, 105, 0, 0.12);
+        box-shadow: 0 12px 36px rgba(13, 45, 76, 0.1), 0 4px 16px rgba(247, 105, 0, 0.14);
+        transform: translateY(-2px);
     }
     .card-body {
         padding: 1.25rem 1.25rem 1.1rem;
@@ -85,7 +330,7 @@
     }
     .card-body .tags {
         margin-top: auto;
-        padding-top: 0.5rem;
+        padding-top: 0.65rem;
     }
     /* Same aspect box for every card; image fills with object-fit: cover */
     .card-media {
@@ -154,41 +399,42 @@
     .card-actions {
         margin: 0.75rem 0 0;
     }
-    .tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-    }
-    .tag {
-        background: var(--su-gray);
-        padding: 0.2rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        color: var(--su-navy);
-    }
     .pagination {
         display: flex;
         gap: 0.5rem;
         margin-top: 2rem;
         flex-wrap: wrap;
+        align-items: center;
     }
     .pagination a, .pagination span {
-        padding: 0.5rem 0.75rem;
-        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
         text-decoration: none;
         font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
     .pagination a {
-        background: var(--su-gray);
+        background: #fff;
         color: var(--su-navy);
+        border: 1px solid rgba(13, 45, 76, 0.12);
+        box-shadow: 0 2px 8px rgba(13, 45, 76, 0.05);
     }
     .pagination a:hover {
         background: var(--su-orange);
         color: white;
+        border-color: var(--su-orange);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(247, 105, 0, 0.35);
     }
     .pagination .current {
-        background: var(--su-orange);
+        background: linear-gradient(135deg, var(--su-navy) 0%, var(--su-navy-light) 100%);
         color: white;
+        border: 1px solid transparent;
+        box-shadow: 0 4px 14px rgba(13, 45, 76, 0.2);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .pagination a:hover { transform: none; }
     }
     .pagination .disabled {
         opacity: 0.5;
@@ -197,12 +443,28 @@
     .results-count {
         font-size: 0.9rem;
         color: var(--su-gray-dark);
-        margin-bottom: 1rem;
+        margin-bottom: 1.25rem;
+        padding: 0.5rem 0.75rem;
+        display: inline-block;
+        background: rgba(13, 45, 76, 0.04);
+        border-radius: 8px;
+        font-weight: 600;
     }
     .empty-state {
         text-align: center;
-        padding: 3rem;
+        padding: 3rem 2rem;
         color: var(--su-gray-dark);
+        background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+        border: 1px dashed rgba(13, 45, 76, 0.15);
+        border-radius: 12px;
+        animation: empty-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+    @keyframes empty-in {
+        from { opacity: 0; transform: scale(0.98); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .empty-state { animation: none; }
     }
 </style>
 {% endblock %}
@@ -210,43 +472,80 @@
 {% block content %}
 <h1 class="page-title">Browse Teaching Activities</h1>
 
-<form method="get" class="filters">
-    <div>
-        <label for="q">Search</label>
-        <input type="text" name="q" id="q" value="{{ request.GET.q }}" placeholder="Search title, description, tags...">
+<section class="filters-panel" aria-labelledby="filters-panel-title">
+    <div class="filters-panel-inner">
+        <header class="filters-header">
+            <div class="filters-header-main">
+                <div class="filters-header-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                </div>
+                <div class="filters-header-text">
+                    <div class="filters-header-title-row">
+                        <h2 id="filters-panel-title" class="filters-heading">Find activities</h2>
+                        <p class="filters-caption">Search by keyword, or narrow results with category, tag, and sort. Leave fields blank to browse everything.</p>
+                    </div>
+                </div>
+            </div>
+            {% if request.GET.q or request.GET.category or request.GET.tag or request.GET.sort and request.GET.sort != '-created_at' %}
+            <a href="{% url 'activities:list' %}" class="filters-clear">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Clear all filters
+            </a>
+            {% endif %}
+        </header>
+        <form method="get" class="filters-form">
+            <div class="filters-grid">
+                <div class="filters-field filters-field--search">
+                    <label for="q">
+                        <span class="lbl-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+                        Search
+                    </label>
+                    <input type="search" name="q" id="q" value="{{ request.GET.q }}" placeholder="Title, description, tags…" autocomplete="off" enterkeyhint="search">
+                </div>
+                <div class="filters-field">
+                    <label for="category">
+                        <span class="lbl-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
+                        Category
+                    </label>
+                    <select name="category" id="category">
+                        <option value="">All categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters-field">
+                    <label for="tag">
+                        <span class="lbl-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg></span>
+                        Tag
+                    </label>
+                    <select name="tag" id="tag">
+                        <option value="">All tags</option>
+                        {% for tag in tags %}
+                        <option value="{{ tag.name }}" {% if request.GET.tag == tag.name %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filters-field">
+                    <label for="sort">
+                        <span class="lbl-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>
+                        Sort
+                    </label>
+                    <select name="sort" id="sort">
+                        <option value="-created_at" {% if request.GET.sort == "-created_at" or not request.GET.sort %}selected{% endif %}>Newest first</option>
+                        <option value="created_at" {% if request.GET.sort == "created_at" %}selected{% endif %}>Oldest first</option>
+                        <option value="title" {% if request.GET.sort == "title" %}selected{% endif %}>Title A–Z</option>
+                        <option value="-title" {% if request.GET.sort == "-title" %}selected{% endif %}>Title Z–A</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filters-footer">
+                <button type="submit" class="btn">Apply filters</button>
+                <p class="filters-hint">Updates the list below. Press <kbd>Enter</kbd> in the search box to apply quickly.</p>
+            </div>
+        </form>
     </div>
-    <div>
-        <label for="category">Category</label>
-        <select name="category" id="category">
-            <option value="">All categories</option>
-            {% for category in categories %}
-            <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div>
-        <label for="tag">Tag</label>
-        <select name="tag" id="tag">
-            <option value="">All tags</option>
-            {% for tag in tags %}
-            <option value="{{ tag.name }}" {% if request.GET.tag == tag.name %}selected{% endif %}>{{ tag.name }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div>
-        <label for="sort">Sort by</label>
-        <select name="sort" id="sort">
-            <option value="-created_at" {% if request.GET.sort == "-created_at" %}selected{% endif %}>Newest first</option>
-            <option value="created_at" {% if request.GET.sort == "created_at" %}selected{% endif %}>Oldest first</option>
-            <option value="title" {% if request.GET.sort == "title" %}selected{% endif %}>Title A–Z</option>
-            <option value="-title" {% if request.GET.sort == "-title" %}selected{% endif %}>Title Z–A</option>
-        </select>
-    </div>
-    <div>
-        <label>&nbsp;</label>
-        <button type="submit" class="btn">Apply</button>
-    </div>
-</form>
+</section>
 
 <p class="results-count">{{ total }} activit{{ total|pluralize:"y,ies" }} found</p>
 
@@ -269,7 +568,7 @@
             {% if activity.tags.all %}
             <div class="tags">
                 {% for tag in activity.tags.all %}
-                <span class="tag">{{ tag }}</span>
+                <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag }}</span>
                 {% endfor %}
             </div>
             {% endif %}
