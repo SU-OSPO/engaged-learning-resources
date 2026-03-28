@@ -61,7 +61,7 @@ python manage.py runserver
 - **Word, Excel, PowerPoint, ODF** : Preview uses **Microsoft Office Online** (`view.officeapps.live.com`) in an iframe. That service must **fetch your file’s URL from the public internet** over **HTTPS**, with **no login**. It cannot reach a dev server that only listens on your laptop, so on **`localhost`** the Office embed is **not shown** (you can still **Download**). After deployment to a real HTTPS URL, previews work if the open URL is world-readable.
 - **Other file types** : No inline preview; use **Download**.
 
-#### List card images (what we use)
+#### List card images 
 All cover photos are **hotlinked from Unsplash** (`images.unsplash.com`) under the [Unsplash License](https://unsplash.com/license), with `auto=format&fit=crop&w=800&h=600&q=80` for consistent card size.
 
 - **Default** : A fixed pool of **12 education-themed** photos. Each activity gets a **stable** image: `activity.id % 12` picks from that pool (see `activities/tile_images.py`).
