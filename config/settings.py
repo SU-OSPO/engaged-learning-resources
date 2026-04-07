@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts',
     'activities',
 ]
 
@@ -125,3 +126,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Auth (TeachOrange)
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/activities/"
+LOGOUT_REDIRECT_URL = "/"
+# Sign-up: require email to end with one of these suffixes (lowercased)
+ALLOWED_EMAIL_SUFFIXES = (".edu",)

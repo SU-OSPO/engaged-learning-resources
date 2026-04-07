@@ -26,6 +26,7 @@ from activities import views as activities_views
 urlpatterns = [
     path("", activities_views.home, name="home"),
     path("admin/", admin.site.urls),
+    path("accounts/", include("accounts.urls")),
     path("activities/", include("activities.urls")),
     path("tags/", activities_views.tag_list),
     path("categories/", activities_views.category_list),

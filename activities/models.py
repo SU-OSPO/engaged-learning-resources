@@ -98,7 +98,7 @@ class ActivityTag(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.activity.title} — {self.tag.name}"
+        return f"{self.activity.title} - {self.tag.name}"
 
 
 class Material(models.Model):
@@ -116,7 +116,19 @@ class Material(models.Model):
         related_name="materials",
     )
     title = models.CharField(max_length=255)
-    file = models.FileField(upload_to="materials/%Y/%m/", blank=True, null=True)
+    file = models.FileField(
+        upload_to="materials/%Y/%m/",
+        blank=True,
+        null=True,
+        help_text="Main file for download (e.g. Word). PDFs can use this field alone for preview + download.",
+    )
+    preview_pdf = models.FileField(
+        upload_to="materials/previews/%Y/%m/",
+        blank=True,
+        null=True,
+        verbose_name="Preview (PDF)",
+        help_text="Optional PDF shown inline on the activity page. Use when File is Word/Office so faculty see a preview here and download the editable file.",
+    )
     material_type = models.CharField(
         max_length=20,
         choices=MaterialType.choices,

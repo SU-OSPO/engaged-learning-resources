@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Log in{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-card {
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid rgba(13, 45, 76, 0.1);
+        box-shadow: 0 8px 32px rgba(13, 45, 76, 0.08);
+    }
+    .auth-card h1 {
+        font-size: 1.35rem;
+        color: var(--su-navy);
+        margin: 0 0 1rem;
+    }
+    .auth-card label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--su-navy);
+        margin-bottom: 0.35rem;
+    }
+    .auth-card input[type="text"],
+    .auth-card input[type="password"],
+    .auth-card input[type="email"] {
+        width: 100%;
+        padding: 0.55rem 0.65rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    .auth-card .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem;
+        color: #b00020;
+        font-size: 0.9rem;
+    }
+    .auth-card .btn-row {
+        margin-top: 0.5rem;
+    }
+    .auth-card .sub {
+        margin-top: 1.25rem;
+        font-size: 0.95rem;
+        color: var(--su-gray-dark);
+    }
+    .auth-card .sub a {
+        color: var(--su-orange);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <h1>Log in to <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span> 🍊</h1>
+    <p style="margin: 0 0 1rem; color: var(--su-gray-dark); font-size: 0.95rem;">
+        Use your university email and password.
+    </p>
+    <form method="post" action="{% url 'accounts:login' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <ul class="errorlist">{{ form.non_field_errors }}</ul>
+        {% endif %}
+        {% if request.GET.next %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
+        <label for="id_username">Email</label>
+        {{ form.username }}
+        {% if form.username.errors %}<ul class="errorlist">{{ form.username.errors }}</ul>{% endif %}
+        <label for="id_password">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}<ul class="errorlist">{{ form.password.errors }}</ul>{% endif %}
+        <div class="btn-row">
+            <button type="submit" class="btn">Log in</button>
+        </div>
+    </form>
+    <p class="sub">No account? <a href="{% url 'accounts:register' %}">Register with your .edu email</a></p>
+</div>
+{% endblock %}

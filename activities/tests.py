@@ -1,4 +1,5 @@
 import json
+from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -50,6 +51,12 @@ class ActivityListTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.user = User.objects.create_user(
+            username="faculty@test.edu",
+            email="faculty@test.edu",
+            password="testpass123",
+        )
+        self.client.login(username="faculty@test.edu", password="testpass123")
         self.cat = Category.objects.create(name="Icebreakers")
         self.tag = Tag.objects.create(name="group")
         self.activity1 = Activity.objects.create(
@@ -111,12 +118,24 @@ class ActivityListTests(TestCase):
         self.assertEqual(data["status"], 400)
         self.assertIn("error", data)
 
+    def test_anonymous_redirects_to_login(self):
+        self.client.logout()
+        resp = self.client.get("/activities/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/", resp["Location"])
+
 
 class ActivityDetailTests(TestCase):
     """Test GET /activities/<id>/ endpoint."""
 
     def setUp(self):
         self.client = Client()
+        self.user = User.objects.create_user(
+            username="faculty@test.edu",
+            email="faculty@test.edu",
+            password="testpass123",
+        )
+        self.client.login(username="faculty@test.edu", password="testpass123")
         self.activity = Activity.objects.create(
             title="Scavenger Hunt",
             description="Find items outside",
@@ -137,6 +156,12 @@ class ActivityDetailTests(TestCase):
         data = json.loads(resp.content)
         self.assertEqual(data["status"], 404)
         self.assertIn("error", data)
+
+    def test_anonymous_redirects_to_login(self):
+        self.client.logout()
+        resp = self.client.get(f"/activities/{self.activity.slug}/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/", resp["Location"])
 
 
 class TagListTests(TestCase):

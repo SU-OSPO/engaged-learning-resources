@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Teaching Activities{% endblock %} | Syracuse University</title>
+    <title>{% block title %}TeachOrange{% endblock %} 🍊</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
@@ -15,6 +15,10 @@
             --su-orange-light: #FF8E00;
             --su-navy: #0D2D4C;
             --su-navy-light: #1a3d5c;
+            /* Matches home feature “sky” accent bar: vibrant sky → cerulean */
+            --brand-teach-sky: #7ec8f5;
+            --brand-teach-mid: #3eb0ea;
+            --brand-teach-deep: #2d8bc9;
             --su-gray: #f5f5f5;
             --su-gray-dark: #555;
             --su-white: #ffffff;
@@ -32,7 +36,7 @@
         .header {
             background: var(--su-navy);
             color: white;
-            padding: 1rem 2rem;
+            padding: 0.75rem 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -48,19 +52,108 @@
             color: var(--su-orange-light);
         }
         .logo {
-            font-size: 1.25rem;
+            font-size: clamp(1.5rem, 3.5vw, 2rem);
+            font-weight: 700;
+            line-height: 1.15;
+        }
+        /* Wordmark: Teach = same sky-blue family as feature cards; Orange = solid orange */
+        .brand-teach {
+            display: inline-block;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            background: linear-gradient(
+                165deg,
+                var(--brand-teach-sky) 0%,
+                var(--brand-teach-mid) 48%,
+                #1f7eb8 100%
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+        }
+        .brand-orange {
+            color: var(--su-orange);
             font-weight: 700;
         }
-        .logo span { color: var(--su-orange); }
+        /* On navy: lighter sky stops so “Teach” reads like the card accent blues */
+        .header .logo .brand-teach,
+        .footer .brand-teach,
+        .home-kicker .brand-teach {
+            background: linear-gradient(
+                165deg,
+                #d9f2ff 0%,
+                var(--brand-teach-sky) 32%,
+                var(--brand-teach-mid) 68%,
+                var(--brand-teach-deep) 100%
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+        .home-kicker .brand-teach,
+        .home-kicker .brand-orange {
+            letter-spacing: 0.14em;
+        }
+        .home-kicker .brand-orange {
+            color: var(--su-orange-light);
+        }
+        .header .logo .brand-orange {
+            color: var(--su-orange-light);
+        }
+        .footer .brand-orange {
+            color: var(--su-orange-light);
+        }
+        .header .logo .logo-emoji {
+            display: inline-block;
+            font-size: 1.08em;
+            line-height: 1;
+            vertical-align: -0.08em;
+            margin-left: 0.2rem;
+        }
         .nav {
             display: flex;
+            align-items: center;
             gap: 1.5rem;
+            flex-wrap: wrap;
         }
-        .nav a {
+        .nav a,
+        .nav .nav-link-btn {
             position: relative;
             padding: 0.2rem 0;
         }
-        .nav a::after {
+        .nav .nav-user {
+            font-size: inherit;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #fff;
+            padding: 0.2rem 0;
+            max-width: 14rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .nav-logout {
+            display: inline;
+            margin: 0;
+            padding: 0;
+        }
+        .nav-link-btn {
+            background: none;
+            border: none;
+            color: white;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .nav-link-btn:hover {
+            color: var(--su-orange-light);
+        }
+        .nav a::after,
+        .nav .nav-link-btn::after {
             content: "";
             position: absolute;
             left: 0;
@@ -71,11 +164,13 @@
             border-radius: 1px;
             transition: width 0.28s var(--ease-out);
         }
-        .nav a:hover::after {
+        .nav a:hover::after,
+        .nav .nav-link-btn:hover::after {
             width: 100%;
         }
         @media (prefers-reduced-motion: reduce) {
-            .nav a::after { transition: none; }
+            .nav a::after,
+            .nav .nav-link-btn::after { transition: none; }
         }
         .main {
             max-width: 1200px;
@@ -137,7 +232,7 @@
             .btn, .btn-outline { transition: background 0.2s ease, color 0.2s ease; }
             .btn:active { transform: none; }
         }
-        /* Tag chips — used on list + detail */
+        /* Tag chips: list + detail */
         .tags {
             display: flex;
             flex-wrap: wrap;
@@ -196,18 +291,28 @@
 </head>
 <body>
     <header class="header">
-        <a href="{% url 'home' %}" class="logo">Teaching Activities <span>| Syracuse University</span></a>
+        <a href="{% url 'home' %}" class="logo"><span class="brand-teach">Teach</span><span class="brand-orange">Orange</span><span class="logo-emoji" aria-hidden="true"> 🍊</span></a>
         <nav class="nav">
             <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'activities:list' %}">Browse Activities</a>
-            <a href="/admin/" target="_blank">Admin</a>
+            <a href="{% url 'activities:list' %}">Browse activities</a>
+            {% if user.is_authenticated %}
+            <span class="nav-user" title="{{ user.email }}">{{ user.email }}</span>
+            <form class="nav-logout" method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="nav-link-btn">Log out</button>
+            </form>
+            {% else %}
+            <a href="{% url 'accounts:login' %}">Log in</a>
+            <a href="{% url 'accounts:register' %}">Register</a>
+            {% endif %}
+            <a href="/admin/" target="_blank" rel="noopener noreferrer">Admin</a>
         </nav>
     </header>
     <main class="main">
         {% block content %}{% endblock %}
     </main>
     <footer class="footer">
-        <p>Teaching Activities Platform • Syracuse University • <a href="https://www.syracuse.edu/">syracuse.edu</a></p>
+        <p><span class="brand-teach">Teach</span><span class="brand-orange">Orange</span> 🍊 • Teaching resources for faculty • <a href="https://teachorange.com/">teachorange.com</a></p>
     </footer>
     {% block extra_js %}{% endblock %}
 </body>

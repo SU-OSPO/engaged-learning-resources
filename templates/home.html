@@ -4,30 +4,46 @@
 
 {% block extra_css %}
 <style>
-    /* Softer page background on the home page only */
+    /* TeachOrange home: warm off-white + orange accents */
     body {
-        background: #e8ecf1;
+        background: linear-gradient(165deg, #fff9f3 0%, #f0f4f8 38%, #e8ecf1 100%);
     }
     .home {
-        max-width: 900px;
+        max-width: 920px;
         margin: 0 auto;
     }
     .home-hero {
         position: relative;
-        background: linear-gradient(145deg, var(--su-navy) 0%, #0c2840 50%, var(--su-navy-light) 100%);
+        /* Diagonal navy like brand reference: deep #0d2c4d → steel #1a4a7a */
+        background: linear-gradient(145deg, #0d2c4d 0%, var(--su-navy) 42%, #1a4a7a 100%);
         color: #fff;
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 2.75rem 2rem 2.5rem;
         margin-bottom: 2.5rem;
         overflow: hidden;
-        box-shadow: 0 12px 40px rgba(13, 45, 76, 0.2);
+        box-shadow: 0 16px 48px rgba(13, 45, 76, 0.28), 0 0 0 1px rgba(255, 140, 0, 0.12);
         isolation: isolate;
     }
     .home-hero::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(ellipse 80% 60% at 100% 0%, rgba(247, 105, 0, 0.15) 0%, transparent 55%);
+        background:
+            radial-gradient(ellipse 90% 70% at 100% -10%, rgba(255, 140, 0, 0.35) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 50% at 0% 100%, rgba(247, 105, 0, 0.12) 0%, transparent 45%),
+            radial-gradient(ellipse 50% 45% at 12% 18%, rgba(100, 190, 255, 0.12) 0%, transparent 55%);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .home-hero::after {
+        content: "";
+        position: absolute;
+        width: min(180px, 40vw);
+        height: min(180px, 40vw);
+        right: -2rem;
+        bottom: -2.5rem;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(80, 170, 235, 0.2) 0%, transparent 68%);
         z-index: 0;
         pointer-events: none;
     }
@@ -38,13 +54,18 @@
     .home-hero-brand {
         display: flex;
         flex-direction: row;
-        align-items: stretch;
+        align-items: center;
         gap: 1rem;
         margin-bottom: 1.25rem;
         opacity: 0;
         animation: home-fade-up 0.65s ease forwards;
         border-left: 4px solid var(--su-orange);
         padding-left: 1rem;
+    }
+    .home-hero-emoji {
+        font-size: 2.75rem;
+        line-height: 1;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
     }
     .home-hero-brand-text {
         display: flex;
@@ -54,19 +75,19 @@
         min-width: 0;
     }
     .home-kicker {
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         font-weight: 700;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: var(--su-orange-light);
         margin: 0 0 0.5rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
     .home-hero h1 {
-        font-size: clamp(1.65rem, 4vw, 2.15rem);
+        font-size: clamp(1.65rem, 4vw, 2.25rem);
         font-weight: 700;
         line-height: 1.2;
         margin: 0 0 1rem;
-        max-width: 32ch;
+        max-width: 36ch;
         opacity: 0;
         animation: home-fade-up 0.65s ease 0.08s forwards;
     }
@@ -93,13 +114,15 @@
     .home-hero-actions .btn {
         padding: 0.65rem 1.25rem;
         font-size: 1rem;
+        box-shadow: 0 4px 14px rgba(247, 105, 0, 0.4);
     }
     .home-hero-actions .btn-outline {
-        border-color: rgba(255, 255, 255, 0.85);
+        border-color: rgba(255, 200, 150, 0.95);
         color: #fff;
+        box-shadow: none;
     }
     .home-hero-actions .btn-outline:hover {
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 140, 0, 0.2);
         border-color: #fff;
         color: #fff;
     }
@@ -107,10 +130,10 @@
         margin-bottom: 0;
     }
     .home-rule {
-        height: 3px;
+        height: 4px;
         width: 0;
-        max-width: 72px;
-        background: var(--su-orange);
+        max-width: 88px;
+        background: linear-gradient(90deg, var(--su-orange-light), var(--su-orange), #ff6b00);
         border-radius: 2px;
         margin: 0;
         animation: home-rule-grow 0.85s ease 0.35s forwards;
@@ -126,7 +149,7 @@
         }
     }
     @keyframes home-rule-grow {
-        to { width: 72px; }
+        to { width: 88px; }
     }
     @keyframes home-card-in {
         from {
@@ -151,7 +174,7 @@
         }
         .home-rule {
             animation: none !important;
-            width: 72px;
+            width: 88px;
         }
     }
     .home-about {
@@ -183,28 +206,64 @@
         }
     }
     .home-feature {
-        background: var(--su-gray);
-        border: 1px solid #e8e8e8;
-        border-radius: 10px;
-        padding: 1.35rem 1.25rem;
+        position: relative;
+        background: linear-gradient(165deg, #ffffff 0%, #fafcfe 100%);
+        border: 1px solid rgba(13, 45, 76, 0.1);
+        border-radius: 14px;
+        padding: 1.4rem 1.3rem 1.35rem;
         opacity: 0;
         animation: home-card-in 0.55s ease forwards;
+        box-shadow: 0 6px 24px rgba(13, 45, 76, 0.07);
+        overflow: hidden;
+    }
+    .home-feature::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 4px 0 0 4px;
+        opacity: 0.9;
+    }
+    .home-feature--sky::before {
+        background: linear-gradient(180deg, var(--brand-teach-sky) 0%, var(--brand-teach-deep) 100%);
+    }
+    .home-feature--orange::before {
+        background: linear-gradient(180deg, var(--su-orange-light) 0%, var(--su-orange-dark) 100%);
+    }
+    .home-feature--edu::before {
+        background: linear-gradient(180deg, var(--brand-teach-mid) 0%, #0d5a8c 100%);
     }
     .home-feature:nth-child(1) { animation-delay: 0.45s; }
     .home-feature:nth-child(2) { animation-delay: 0.55s; }
     .home-feature:nth-child(3) { animation-delay: 0.65s; }
     .home-feature-icon {
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 8px;
-        background: rgba(247, 105, 0, 0.12);
-        color: var(--su-orange);
+        width: 2.85rem;
+        height: 2.85rem;
+        border-radius: 11px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 1.4rem;
         font-weight: 700;
-        margin-bottom: 0.85rem;
+        margin-bottom: 0.9rem;
+        line-height: 1;
+    }
+    .home-feature--sky .home-feature-icon {
+        background: linear-gradient(145deg, rgba(126, 200, 245, 0.4) 0%, rgba(45, 139, 201, 0.18) 100%);
+        color: #0b5a8a;
+        border: 1px solid rgba(61, 160, 220, 0.4);
+    }
+    .home-feature--orange .home-feature-icon {
+        background: linear-gradient(145deg, rgba(255, 140, 0, 0.22) 0%, rgba(247, 105, 0, 0.1) 100%);
+        color: var(--su-orange-dark);
+        border: 1px solid rgba(247, 105, 0, 0.28);
+    }
+    .home-feature--edu .home-feature-icon {
+        background: linear-gradient(145deg, rgba(126, 200, 245, 0.32) 0%, rgba(45, 139, 201, 0.14) 100%);
+        color: #0b5a8a;
+        border: 1px solid rgba(61, 160, 220, 0.38);
     }
     .home-feature h3 {
         font-size: 1.05rem;
@@ -220,12 +279,13 @@
     }
     .home-bottom {
         text-align: center;
-        padding: 1.75rem 1.25rem;
-        background: linear-gradient(180deg, var(--su-gray) 0%, #fff 100%);
-        border-radius: 10px;
-        border: 1px solid #e8e8e8;
+        padding: 1.85rem 1.35rem;
+        background: linear-gradient(180deg, #fff5eb 0%, #ffffff 55%);
+        border-radius: 14px;
+        border: 1px solid rgba(247, 105, 0, 0.22);
         opacity: 0;
         animation: home-card-in 0.55s ease 0.75s forwards;
+        box-shadow: 0 8px 28px rgba(247, 105, 0, 0.08);
     }
     .home-bottom p {
         margin: 0 0 1rem;
@@ -240,18 +300,24 @@
     <section class="home-hero" aria-labelledby="home-heading">
         <div class="home-hero-inner">
             <div class="home-hero-brand">
+                <span class="home-hero-emoji" aria-hidden="true">🍊</span>
                 <div class="home-hero-brand-text">
-                    <p class="home-kicker">Syracuse University</p>
+                    <p class="home-kicker"><span class="brand-teach">Teach</span><span class="brand-orange">Orange</span></p>
                     <div class="home-rule" aria-hidden="true"></div>
                 </div>
             </div>
             <h1 id="home-heading">Teaching activities for faculty</h1>
             <p class="home-lead">
-                This site helps Syracuse instructors discover peer shared teaching ideas: browse by topic or tag, read full descriptions, and download materials. Content is maintained by your colleagues through the admin workspace.
+                Discover peer-shared teaching ideas: browse by topic or tag, open previews in a new tab when available, and download materials with your <strong>.edu</strong> account.
             </p>
             <div class="home-hero-actions">
+                {% if user.is_authenticated %}
                 <a href="{% url 'activities:list' %}" class="btn">Browse activities</a>
-                <a href="https://www.syracuse.edu/" class="btn btn-outline" target="_blank" rel="noopener noreferrer">Syracuse.edu</a>
+                {% else %}
+                <a href="{% url 'accounts:register' %}" class="btn">Register with .edu</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline">Log in</a>
+                {% endif %}
+                <a href="https://teachorange.com/" class="btn btn-outline" target="_blank" rel="noopener noreferrer">teachorange.com</a>
             </div>
         </div>
     </section>
@@ -261,32 +327,37 @@
             <h2 id="about-heading">What you’ll find here</h2>
             <p>
                 Each activity includes a title, description, category, and tags so you can search and filter quickly.
-                Detail pages show downloadable handouts, slides, and other files with previews when your browser supports them, so you can evaluate a resource before using it in class.
+                Detail pages list downloadable handouts, slides, and other files. Open a preview in a new tab when it’s available, or download to use in class.
             </p>
         </div>
     </section>
 
     <section class="home-features" aria-label="Key features">
-        <article class="home-feature">
-            <div class="home-feature-icon" aria-hidden="true">1</div>
+        <article class="home-feature home-feature--sky">
+            <div class="home-feature-icon" aria-hidden="true">🔍</div>
             <h3>Search and filter</h3>
-            <p>Find activities by keyword, tag, or category, and sort to match how you like to browse.</p>
+            <p>Find activities by keyword, tag, or category, and sort the list the way you like to browse.</p>
         </article>
-        <article class="home-feature">
-            <div class="home-feature-icon" aria-hidden="true">2</div>
+        <article class="home-feature home-feature--orange">
+            <div class="home-feature-icon" aria-hidden="true">📚</div>
             <h3>Materials in one place</h3>
-            <p>PDFs, images, video, and text previews where supported, plus a clear download when you need the file.</p>
+            <p>Handouts, slides, and more: preview in a new tab when the file type allows, or download in one click.</p>
         </article>
-        <article class="home-feature">
-            <div class="home-feature-icon" aria-hidden="true">3</div>
-            <h3>Faculty managed</h3>
-            <p>Contributors update activities through the secure admin interface; this public view stays easy to read.</p>
+        <article class="home-feature home-feature--edu">
+            <div class="home-feature-icon" aria-hidden="true">🎓</div>
+            <h3>Your .edu access</h3>
+            <p>Sign up with your university email to browse and download. One account keeps the library simple and faculty-focused.</p>
         </article>
     </section>
 
     <section class="home-bottom">
+        {% if user.is_authenticated %}
         <p>Ready to explore?</p>
         <a href="{% url 'activities:list' %}" class="btn">Go to activity list</a>
+        {% else %}
+        <p>Sign in with your university email to browse and download.</p>
+        <a href="{% url 'accounts:register' %}" class="btn">Create account</a>
+        {% endif %}
     </section>
 </div>
 {% endblock %}

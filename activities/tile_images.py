@@ -15,13 +15,13 @@ from typing import List, Optional
 
 _URL_Q = "?auto=format&fit=crop&w=800&h=600&q=80"
 
-# Person holding a map — scavenger / treasure hunt / clues (Natalie, Unsplash)
+# Person holding a map: scavenger / treasure hunt / clues (Natalie, Unsplash)
 _IMAGE_SCAVENGER_MAP = (
     f"https://images.unsplash.com/photo-1470506926202-05d3fca84c9a{_URL_Q}"
 )
-# Jigsaw puzzle — collaborative problem-solving (Fabian Kühne, Unsplash)
+# Jigsaw puzzle: collaborative problem-solving (Fabian Kühne, Unsplash)
 _IMAGE_PUZZLE = f"https://images.unsplash.com/photo-1601063987324-7b482964872b{_URL_Q}"
-# Group outdoors / trail — hiking & team activities (Unsplash)
+# Group outdoors / trail: hiking & team activities (Unsplash)
 _IMAGE_OUTDOOR_GROUP = (
     f"https://images.unsplash.com/photo-1529333166437-7750a6dd5a70{_URL_Q}"
 )
@@ -61,7 +61,7 @@ def _haystack_lower(activity) -> str:
 
 def _themed_tile_url(hay: str) -> Optional[str]:
     """Return a themed tile URL or None to use the default pool."""
-    # HR / admissions-style copy often mentions "orientation" or "team" — keep the
+    # HR / admissions-style copy often mentions "orientation" or "team"; keep the
     # stable id-based pool image (what showed before themed overrides).
     if any(
         needle in hay
@@ -72,7 +72,7 @@ def _themed_tile_url(hay: str) -> Optional[str]:
         )
     ):
         return None
-    # Scavenger / treasure / clues — map photo (avoid bare "hunt" — too broad)
+    # Scavenger / treasure / clues: map photo (avoid bare "hunt", too broad)
     if any(
         needle in hay
         for needle in (

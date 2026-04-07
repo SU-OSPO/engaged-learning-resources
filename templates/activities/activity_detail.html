@@ -117,51 +117,45 @@
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
+        align-items: center;
     }
-    .preview-wrap {
-        border-top: 1px solid #e8e8e8;
-        background: #fafafa;
-        min-height: 200px;
-        max-height: 70vh;
+    .btn-preview {
+        background: linear-gradient(180deg, #fff 0%, #fff5eb 100%);
+        color: var(--su-orange-dark);
+        border: 2px solid var(--su-orange);
+        box-shadow: 0 2px 8px rgba(247, 105, 0, 0.15);
     }
-    .preview-wrap iframe {
-        width: 100%;
-        height: min(70vh, 600px);
-        border: none;
-        display: block;
+    .btn-preview:hover {
+        background: var(--su-orange);
+        color: #fff;
+        border-color: var(--su-orange);
+        box-shadow: 0 4px 16px rgba(247, 105, 0, 0.35);
     }
-    .preview-wrap img {
-        max-width: 100%;
-        max-height: min(70vh, 600px);
-        width: auto;
-        height: auto;
-        display: block;
-        margin: 0 auto;
-        object-fit: contain;
+    .btn-preview-off,
+    .btn-preview-off:disabled {
+        opacity: 0.72;
+        cursor: not-allowed;
+        background: linear-gradient(180deg, #f5f5f5 0%, #ebebeb 100%) !important;
+        color: #666 !important;
+        border: 2px dashed #bbb !important;
+        box-shadow: none !important;
+        font: inherit;
     }
-    .preview-wrap video {
-        width: 100%;
-        max-height: min(70vh, 500px);
-        display: block;
-    }
-    .preview-text {
-        padding: 1rem;
-        font-family: ui-monospace, monospace;
-        font-size: 0.85rem;
-        white-space: pre-wrap;
-        overflow: auto;
-        max-height: 400px;
+    .btn-preview-off:hover {
+        background: linear-gradient(180deg, #f5f5f5 0%, #ebebeb 100%) !important;
+        color: #666 !important;
     }
     .preview-note {
-        padding: 1rem;
+        padding: 0.75rem 1rem 1rem;
         font-size: 0.9rem;
         color: var(--su-gray-dark);
         margin: 0;
+        border-top: 1px solid #eee;
+        background: #fafbfc;
     }
-    .preview-hint {
-        font-size: 0.8rem;
-        padding-top: 0;
-        margin-top: -0.25rem;
+    .preview-hint-below {
+        font-size: 0.85rem;
+        color: var(--su-gray-dark);
     }
     .back-link {
         display: inline-block;
@@ -221,38 +215,33 @@
                     <strong>{{ m.title }}</strong>
                     <span class="material-type">{{ m.material_type }}</span>
                 </div>
-                {% if m.file_download_url %}
+                {% if m.file_download_url or m.show_preview_button and m.file_open_url %}
                 <div class="material-actions">
+                    {% if m.show_preview_button and m.file_open_url %}
+                    <a href="{{ m.file_open_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-preview">Preview</a>
+                    {% elif m.preview_kind == "office" %}
+                    <button type="button" class="btn btn-preview btn-preview-off" disabled
+                        title="Browser preview needs a PDF. In Admin, edit this material and upload a file under “Preview (PDF)” (export your Word doc as PDF). Download still gives the original Word file.">
+                        Preview
+                    </button>
+                    {% endif %}
+                    {% if m.file_download_url %}
                     <a href="{{ m.file_download_url }}" class="btn">Download</a>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
             {% if m.file_open_url %}
-                {% if m.preview_kind == "pdf" %}
-                <div class="preview-wrap">
-                    <iframe src="{{ m.file_open_url }}" title="PDF preview of {{ m.title }}"></iframe>
-                </div>
-                {% elif m.preview_kind == "image" %}
-                <div class="preview-wrap">
-                    <img src="{{ m.file_open_url }}" alt="Preview: {{ m.title }}">
-                </div>
-                {% elif m.preview_kind == "video" %}
-                <div class="preview-wrap">
-                    <video controls preload="metadata" src="{{ m.file_open_url }}">Your browser does not support video.</video>
-                </div>
-                {% elif m.preview_kind == "text" %}
-                <div class="preview-wrap">
-                    <iframe src="{{ m.file_open_url }}" title="Text preview"></iframe>
-                </div>
+                {% if m.show_preview_button and m.has_preview_pdf %}
+                <p class="preview-note preview-hint-below">Press <strong>Preview</strong> to open the PDF in a new tab. <strong>Download</strong> is the main (e.g. Word) file.</p>
+                {% elif m.show_preview_button %}
+                <p class="preview-note preview-hint-below">Press <strong>Preview</strong> to open in a new tab.</p>
                 {% elif m.preview_kind == "office" %}
-                    {% if not m.office_preview_blocked_local %}
-                    <div class="preview-wrap">
-                        <iframe src="https://view.officeapps.live.com/op/embed.aspx?src={{ m.office_embed_src }}" title="Office document preview"></iframe>
-                    </div>
-                    <p class="preview-note preview-hint">If the preview stays blank, the file URL must be reachable from the internet (HTTPS, no auth).</p>
-                    {% endif %}
+                <p class="preview-note">
+                    Word, Excel, and PowerPoint can’t be previewed in the browser here. Use <strong>Download</strong>, or add a <strong>Preview (PDF)</strong> in admin and use <strong>Preview</strong>.
+                </p>
                 {% else %}
-                <p class="preview-note">No inline preview for this file type. Use <strong>Download</strong> to open it.</p>
+                <p class="preview-note">Use <strong>Download</strong> for this file type.</p>
                 {% endif %}
             {% endif %}
         </li>

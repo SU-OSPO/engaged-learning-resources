@@ -1,5 +1,8 @@
 from django import forms
 from django.contrib import admin
+
+admin.site.site_header = "TeachOrange administration"
+admin.site.site_title = "TeachOrange admin"
 from django.core.exceptions import ValidationError
 from .models import Category, Tag, Activity, ActivityTag, Material
 
@@ -45,6 +48,7 @@ class ActivityTagInline(admin.TabularInline):
 class MaterialInline(admin.TabularInline):
     model = Material
     extra = 1
+    fields = ("title", "material_type", "file", "preview_pdf")
     # activity is auto-set when adding via Activity; required when adding standalone
 
 
@@ -72,6 +76,10 @@ class ActivityAdmin(admin.ModelAdmin):
 
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
-    list_display = ["title", "activity", "material_type", "uploaded_at"]
+    list_display = ["title", "activity", "material_type", "has_preview_pdf", "uploaded_at"]
     list_filter = ["material_type"]
     search_fields = ["title"]
+
+    @admin.display(boolean=True, ordering="preview_pdf", description="Preview PDF")
+    def has_preview_pdf(self, obj):
+        return bool(obj.preview_pdf)

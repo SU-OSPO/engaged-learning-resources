@@ -2,12 +2,12 @@ import mimetypes
 import os
 from urllib.parse import quote, urlencode
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET
 
 from config.error_handlers import json_error_response
@@ -58,6 +58,14 @@ def _content_type_for_filename(name):
     return ctype or "application/octet-stream"
 
 
+def _preview_kind_for_material(m):
+    """Preview uses optional preview_pdf first, then the main file."""
+    if m.preview_pdf:
+        return "pdf"
+    fname = m.file.name if m.file else ""
+    return _preview_kind(fname)
+
+
 def _preview_kind(file_field_name):
     """Return preview type for inline browser display."""
     if not file_field_name:
@@ -71,7 +79,7 @@ def _preview_kind(file_field_name):
         return "video"
     if ext in ("txt", "md", "csv"):
         return "text"
-    # Word / Excel / PowerPoint — preview via Office Online when URL is public
+    # Word / Excel / PowerPoint: preview via Office Online when URL is public
     if ext in ("doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp"):
         return "office"
     return "none"
@@ -83,17 +91,17 @@ def _is_localhost_request(request):
 
 
 def _material_dict(m, request):
-    fname = m.file.name if m.file else ""
-    kind = _preview_kind(fname)
+    kind = _preview_kind_for_material(m)
     file_open_url = None
     file_download_url = None
-    if m.file:
+    if m.preview_pdf or m.file:
         file_open_url = request.build_absolute_uri(
             reverse("activities:material_open", kwargs={"material_id": m.id})
         )
         file_download_url = request.build_absolute_uri(
             reverse("activities:material_download", kwargs={"material_id": m.id})
         )
+    show_preview_button = kind in ("pdf", "image", "video", "text")
     d = {
         "id": m.id,
         "title": m.title,
@@ -104,25 +112,30 @@ def _material_dict(m, request):
         "file_download_url": file_download_url,
         "uploaded_at": m.uploaded_at.isoformat(),
         "preview_kind": kind,
+        "show_preview_button": show_preview_button,
+        "has_preview_pdf": bool(m.preview_pdf),
     }
+    # Office Online cannot fetch login-protected URLs (no session cookie). PDF preview is preferred.
     if kind == "office" and file_open_url:
         d["office_embed_src"] = quote(file_open_url, safe="")
         d["office_preview_blocked_local"] = _is_localhost_request(request)
+        d["office_preview_blocked_auth"] = True
     else:
         d["office_embed_src"] = None
         d["office_preview_blocked_local"] = False
+        d["office_preview_blocked_auth"] = False
     return d
 
 
-def _serve_material(request, material_id, *, as_attachment):
-    m = get_object_or_404(Material, pk=material_id)
-    if not m.file:
+def _serve_file_field(file_field, *, as_attachment):
+    """Stream a FileField from disk."""
+    if not file_field:
         raise Http404
-    fs_path = m.file.path
+    fs_path = file_field.path
     if not os.path.isfile(fs_path):
         raise Http404
-    basename = os.path.basename(m.file.name)
-    content_type = _content_type_for_filename(m.file.name)
+    basename = os.path.basename(file_field.name)
+    content_type = _content_type_for_filename(file_field.name)
     response = FileResponse(
         open(fs_path, "rb"),
         as_attachment=as_attachment,
@@ -130,22 +143,42 @@ def _serve_material(request, material_id, *, as_attachment):
         content_type=content_type,
     )
     if not as_attachment:
-        # Minimal disposition; some clients are picky about filename= with inline.
         response.headers["Content-Disposition"] = "inline"
     return response
 
 
-@xframe_options_sameorigin
+def _serve_material_open(request, material_id):
+    """Inline: prefer dedicated Preview (PDF), else main file."""
+    m = get_object_or_404(Material, pk=material_id)
+    if m.preview_pdf:
+        return _serve_file_field(m.preview_pdf, as_attachment=False)
+    if m.file:
+        return _serve_file_field(m.file, as_attachment=False)
+    raise Http404
+
+
+def _serve_material_download(request, material_id):
+    """Attachment: main file for download; if only preview PDF exists, offer that."""
+    m = get_object_or_404(Material, pk=material_id)
+    if m.file:
+        return _serve_file_field(m.file, as_attachment=True)
+    if m.preview_pdf:
+        return _serve_file_field(m.preview_pdf, as_attachment=True)
+    raise Http404
+
+
+@login_required
 @require_GET
 def material_open(request, material_id):
     """Serve file with Content-Disposition: inline so browsers display PDF/images/video in-tab."""
-    return _serve_material(request, material_id, as_attachment=False)
+    return _serve_material_open(request, material_id)
 
 
+@login_required
 @require_GET
 def material_download(request, material_id):
-    """Serve file with Content-Disposition: attachment for an explicit download."""
-    return _serve_material(request, material_id, as_attachment=True)
+    """Serve main file as download (or preview PDF only if no main file)."""
+    return _serve_material_download(request, material_id)
 
 
 @require_GET
@@ -186,6 +219,7 @@ def _get_filtered_queryset(request):
     return qs, None
 
 
+@login_required
 @require_GET
 def activity_list(request):
     """
@@ -256,6 +290,7 @@ def activity_list(request):
     )
 
 
+@login_required
 @require_GET
 def activity_detail(request, slug):
     """Retrieve a single activity by slug. Returns HTML or JSON."""
