@@ -65,9 +65,9 @@
 
 {% block content %}
 <div class="auth-card">
-    <h1>Join <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span> 🍊</h1>
+    <h1>Join <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span></h1>
     <p style="margin: 0 0 1rem; color: var(--su-gray-dark); font-size: 0.95rem;">
-        Register with a <strong>.edu</strong> email to browse activities, preview PDFs, and download materials.
+        Register with a <strong>.edu</strong> email to preview PDFs and download materials.
     </p>
     <form method="post" action="{% url 'accounts:register' %}">
         {% csrf_token %}
@@ -78,9 +78,9 @@
         {% if field.errors %}<ul class="errorlist">{{ field.errors }}</ul>{% endif %}
         {% endfor %}
         <div class="btn-row">
-            <button type="submit" class="btn">Create account</button>
+            <button type="submit" class="btn btn-outline">Create account</button>
         </div>
     </form>
-    <p class="sub">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+    <p class="sub">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
 </div>
 {% endblock %}

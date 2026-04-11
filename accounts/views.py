@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import redirect, render
@@ -23,6 +24,10 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            messages.success(
+                request,
+                "Your account was created successfully. Welcome to TeachOrange.",
+            )
             return redirect("activities:list")
     else:
         form = SignUpForm()

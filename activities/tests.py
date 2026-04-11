@@ -118,11 +118,12 @@ class ActivityListTests(TestCase):
         self.assertEqual(data["status"], 400)
         self.assertIn("error", data)
 
-    def test_anonymous_redirects_to_login(self):
+    def test_anonymous_can_list_activities_json(self):
         self.client.logout()
         resp = self.client.get("/activities/")
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn("/accounts/login/", resp["Location"])
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data["total"], 2)
 
 
 class ActivityDetailTests(TestCase):
@@ -157,9 +158,29 @@ class ActivityDetailTests(TestCase):
         self.assertEqual(data["status"], 404)
         self.assertIn("error", data)
 
-    def test_anonymous_redirects_to_login(self):
+    def test_anonymous_can_view_detail_json(self):
         self.client.logout()
         resp = self.client.get(f"/activities/{self.activity.slug}/")
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data["title"], "Scavenger Hunt")
+
+    def test_anonymous_material_open_redirects_to_login(self):
+        self.client.logout()
+        resp = self.client.get("/activities/materials/99999/open/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/", resp["Location"])
+
+    def test_anonymous_material_download_redirects_to_login(self):
+        self.client.logout()
+        resp = self.client.get("/activities/materials/99999/download/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/accounts/login/", resp["Location"])
+
+    def test_anonymous_direct_media_url_redirects_to_login(self):
+        """Uploaded files must not be world-readable via /media/ (bypasses material_open)."""
+        self.client.logout()
+        resp = self.client.get("/media/materials/2020/01/anything.pdf")
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/accounts/login/", resp["Location"])
 

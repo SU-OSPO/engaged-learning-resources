@@ -19,9 +19,9 @@ handler500 = "config.error_handlers.handler500"
 
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
 from activities import views as activities_views
+
+from .media_serve import protected_media
 
 urlpatterns = [
     path("", activities_views.home, name="home"),
@@ -30,7 +30,6 @@ urlpatterns = [
     path("activities/", include("activities.urls")),
     path("tags/", activities_views.tag_list),
     path("categories/", activities_views.category_list),
+    # Uploaded materials: never expose via public static() — require login (same as preview/download).
+    path("media/<path:path>", protected_media),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load activity_icons %}
 
 {% block title %}{{ activity.title }}{% endblock %}
 
@@ -97,10 +96,6 @@
         padding: 1rem;
         flex-wrap: wrap;
     }
-    .mat-emoji {
-        font-size: 1.35rem;
-        line-height: 1.2;
-    }
     .material-info {
         flex: 1;
         min-width: 0;
@@ -157,6 +152,15 @@
         font-size: 0.85rem;
         color: var(--su-gray-dark);
     }
+    .materials-login-hint {
+        font-size: 0.92rem;
+        color: var(--su-gray-dark);
+        margin: 0 0 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(247, 105, 0, 0.08);
+        border-radius: 8px;
+        border: 1px solid rgba(247, 105, 0, 0.22);
+    }
     .back-link {
         display: inline-block;
         margin-bottom: 1.5rem;
@@ -206,39 +210,59 @@
 {% if materials %}
 <section class="materials-section">
     <h2>Materials</h2>
+    {% if not user.is_authenticated %}
+    <p class="materials-login-hint">Sign in with your <strong>.edu</strong> account to open previews in a new tab and download files. Use <strong>Preview</strong> and <strong>Download</strong> below.</p>
+    {% endif %}
     <ul class="material-list">
         {% for m in materials %}
         <li class="material-card" style="--mat-i: {{ forloop.counter0 }}">
             <div class="material-head">
-                <span class="mat-emoji" aria-hidden="true">{{ m.material_type_key|material_type_emoji }}</span>
                 <div class="material-info">
                     <strong>{{ m.title }}</strong>
                     <span class="material-type">{{ m.material_type }}</span>
                 </div>
-                {% if m.file_download_url or m.show_preview_button and m.file_open_url %}
+                {% if m.file_download_url or m.show_preview_button and m.file_open_url or m.preview_kind == "office" and m.file_open_url %}
                 <div class="material-actions">
                     {% if m.show_preview_button and m.file_open_url %}
-                    <a href="{{ m.file_open_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-preview">Preview</a>
-                    {% elif m.preview_kind == "office" %}
+                        {% if user.is_authenticated %}
+                        <a href="{{ m.file_open_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-preview">Preview</a>
+                        {% else %}
+                        {% url 'activities:material_open' m.id as preview_next %}
+                        <a href="{% url 'accounts:login' %}?next={{ preview_next|urlencode }}" class="btn btn-preview">Preview</a>
+                        {% endif %}
+                    {% elif m.preview_kind == "office" and m.file_open_url %}
                     <button type="button" class="btn btn-preview btn-preview-off" disabled
                         title="Browser preview needs a PDF. In Admin, edit this material and upload a file under “Preview (PDF)” (export your Word doc as PDF). Download still gives the original Word file.">
                         Preview
                     </button>
                     {% endif %}
                     {% if m.file_download_url %}
-                    <a href="{{ m.file_download_url }}" class="btn">Download</a>
+                        {% if user.is_authenticated %}
+                        <a href="{{ m.file_download_url }}" class="btn">Download</a>
+                        {% else %}
+                        {% url 'activities:material_download' m.id as download_next %}
+                        <a href="{% url 'accounts:login' %}?next={{ download_next|urlencode }}" class="btn">Download</a>
+                        {% endif %}
                     {% endif %}
                 </div>
                 {% endif %}
             </div>
             {% if m.file_open_url %}
                 {% if m.show_preview_button and m.has_preview_pdf %}
-                <p class="preview-note preview-hint-below">Press <strong>Preview</strong> to open the PDF in a new tab. <strong>Download</strong> is the main (e.g. Word) file.</p>
+                    {% if user.is_authenticated %}
+                    <p class="preview-note preview-hint-below">Press <strong>Preview</strong> to open the PDF in a new tab. <strong>Download</strong> is the main (e.g. Word) file.</p>
+                    {% else %}
+                    <p class="preview-note preview-hint-below">Use <strong>Preview</strong> for the PDF in a new tab. <strong>Download</strong> gets the main (e.g. Word) file.</p>
+                    {% endif %}
                 {% elif m.show_preview_button %}
-                <p class="preview-note preview-hint-below">Press <strong>Preview</strong> to open in a new tab.</p>
+                    {% if user.is_authenticated %}
+                    <p class="preview-note preview-hint-below">Press <strong>Preview</strong> to open in a new tab.</p>
+                    {% else %}
+                    <p class="preview-note preview-hint-below">Use <strong>Preview</strong> to open in a new tab.</p>
+                    {% endif %}
                 {% elif m.preview_kind == "office" %}
                 <p class="preview-note">
-                    Word, Excel, and PowerPoint can’t be previewed in the browser here. Use <strong>Download</strong>, or add a <strong>Preview (PDF)</strong> in admin and use <strong>Preview</strong>.
+                    Word, Excel, and PowerPoint can’t be previewed in the browser here. Use <strong>Download</strong>, or add a <strong>Preview (PDF)</strong> in admin{% if not user.is_authenticated %} and sign in{% endif %} to use preview.
                 </p>
                 {% else %}
                 <p class="preview-note">Use <strong>Download</strong> for this file type.</p>

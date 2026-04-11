@@ -219,7 +219,6 @@ def _get_filtered_queryset(request):
     return qs, None
 
 
-@login_required
 @require_GET
 def activity_list(request):
     """
@@ -290,7 +289,6 @@ def activity_list(request):
     )
 
 
-@login_required
 @require_GET
 def activity_detail(request, slug):
     """Retrieve a single activity by slug. Returns HTML or JSON."""

@@ -81,6 +81,7 @@
             <button type="submit" class="btn">Log in</button>
         </div>
     </form>
+    <p class="auth-forgot"><a href="{% url 'accounts:password_reset' %}" class="auth-outline">Forgot password?</a></p>
     <p class="sub">No account? <a href="{% url 'accounts:register' %}">Register with your .edu email</a></p>
 </div>
 {% endblock %}

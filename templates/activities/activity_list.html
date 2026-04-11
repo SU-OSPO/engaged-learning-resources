@@ -72,7 +72,7 @@
         z-index: 1;
         display: flex;
         flex-wrap: wrap;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 1rem;
         padding: 1.25rem 1.35rem 0.75rem;
@@ -81,7 +81,7 @@
     .filters-header-main {
         display: flex;
         gap: 0.85rem;
-        align-items: flex-start;
+        align-items: center;
         min-width: 0;
         flex: 1;
     }
@@ -466,11 +466,39 @@
     @media (prefers-reduced-motion: reduce) {
         .empty-state { animation: none; }
     }
+    .list-auth-banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 1.25rem;
+        margin-bottom: 1.5rem;
+        padding: 0.85rem 1.1rem;
+        background: linear-gradient(135deg, rgba(13, 45, 76, 0.06) 0%, rgba(247, 105, 0, 0.09) 100%);
+        border: 1px solid rgba(13, 45, 76, 0.12);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: var(--su-gray-dark);
+    }
+    .list-auth-banner p {
+        margin: 0;
+        flex: 1;
+        min-width: min(100%, 12rem);
+    }
+    .list-auth-banner .btn {
+        flex-shrink: 0;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <h1 class="page-title">Browse Teaching Activities</h1>
+{% if not user.is_authenticated %}
+<div class="list-auth-banner" role="region" aria-label="Sign in">
+    <p>Preview and download on activity pages require a <strong>.edu</strong> sign-in.</p>
+    <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn">Log in</a>
+    <a href="{% url 'accounts:register' %}" class="btn btn-outline">Register</a>
+</div>
+{% endif %}
 
 <section class="filters-panel" aria-labelledby="filters-panel-title">
     <div class="filters-panel-inner">

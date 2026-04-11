@@ -62,11 +62,6 @@
         border-left: 4px solid var(--su-orange);
         padding-left: 1rem;
     }
-    .home-hero-emoji {
-        font-size: 2.75rem;
-        line-height: 1;
-        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
-    }
     .home-hero-brand-text {
         display: flex;
         flex-direction: column;
@@ -75,12 +70,40 @@
         min-width: 0;
     }
     .home-kicker {
-        font-size: 0.82rem;
+        font-size: clamp(0.88rem, 2.2vw, 1rem);
         font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        text-transform: none;
         margin: 0 0 0.5rem;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+    .home-hero-brand-text .home-rule {
+        margin-bottom: 0;
+    }
+    .home-rule {
+        height: 4px;
+        width: 0;
+        max-width: 88px;
+        background: linear-gradient(90deg, var(--su-orange-light), var(--su-orange), #ff6b00);
+        border-radius: 2px;
+        margin: 0;
+        animation: home-rule-grow 0.85s ease 0.35s forwards;
+    }
+    .home-kicker-wordmark {
+        display: inline;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+    .home-kicker-fruit {
+        font-size: 1.5rem;
+        line-height: 1;
+        letter-spacing: 0;
+        text-transform: none;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
     }
     .home-hero h1 {
         font-size: clamp(1.65rem, 4vw, 2.25rem);
@@ -101,7 +124,10 @@
         hyphens: none;
         -webkit-hyphens: none;
         opacity: 0;
-        animation: home-fade-up 0.65s ease 0.16s forwards;
+        animation: home-fade-up 0.65s ease 0.12s forwards;
+    }
+    .home-lead strong {
+        color: #fff;
     }
     .home-hero-actions {
         display: flex;
@@ -109,7 +135,7 @@
         gap: 0.75rem;
         align-items: center;
         opacity: 0;
-        animation: home-fade-up 0.65s ease 0.24s forwards;
+        animation: home-fade-up 0.65s ease 0.2s forwards;
     }
     .home-hero-actions .btn {
         padding: 0.65rem 1.25rem;
@@ -125,18 +151,6 @@
         background: rgba(255, 140, 0, 0.2);
         border-color: #fff;
         color: #fff;
-    }
-    .home-hero-brand-text .home-rule {
-        margin-bottom: 0;
-    }
-    .home-rule {
-        height: 4px;
-        width: 0;
-        max-width: 88px;
-        background: linear-gradient(90deg, var(--su-orange-light), var(--su-orange), #ff6b00);
-        border-radius: 2px;
-        margin: 0;
-        animation: home-rule-grow 0.85s ease 0.35s forwards;
     }
     @keyframes home-fade-up {
         from {
@@ -300,24 +314,22 @@
     <section class="home-hero" aria-labelledby="home-heading">
         <div class="home-hero-inner">
             <div class="home-hero-brand">
-                <span class="home-hero-emoji" aria-hidden="true">🍊</span>
                 <div class="home-hero-brand-text">
-                    <p class="home-kicker"><span class="brand-teach">Teach</span><span class="brand-orange">Orange</span></p>
+                    <p class="home-kicker"><span class="home-kicker-wordmark"><span class="brand-teach">Teach</span><span class="brand-orange">Orange</span></span><span class="home-kicker-fruit" aria-hidden="true">🍊</span></p>
                     <div class="home-rule" aria-hidden="true"></div>
                 </div>
             </div>
             <h1 id="home-heading">Teaching activities for faculty</h1>
             <p class="home-lead">
-                Discover peer-shared teaching ideas: browse by topic or tag, open previews in a new tab when available, and download materials with your <strong>.edu</strong> account.
+                <strong>TeachOrange</strong> is a free library for higher-ed faculty: peer-shared teaching activities with descriptions, tags, and downloadable handouts and files, so you can <strong>browse and search without signing in</strong>. Sign in with your <strong>.edu</strong> email when you want to preview files or download materials.
             </p>
             <div class="home-hero-actions">
                 {% if user.is_authenticated %}
                 <a href="{% url 'activities:list' %}" class="btn">Browse activities</a>
                 {% else %}
-                <a href="{% url 'accounts:register' %}" class="btn">Register with .edu</a>
-                <a href="{% url 'accounts:login' %}" class="btn btn-outline">Log in</a>
+                <a href="{% url 'activities:list' %}" class="btn">Browse activities</a>
+                <a href="{% url 'accounts:register' %}" class="btn btn-outline">Register with .edu</a>
                 {% endif %}
-                <a href="https://teachorange.com/" class="btn btn-outline" target="_blank" rel="noopener noreferrer">teachorange.com</a>
             </div>
         </div>
     </section>
@@ -327,7 +339,7 @@
             <h2 id="about-heading">What you’ll find here</h2>
             <p>
                 Each activity includes a title, description, category, and tags so you can search and filter quickly.
-                Detail pages list downloadable handouts, slides, and other files. Open a preview in a new tab when it’s available, or download to use in class.
+                Detail pages describe materials available to faculty. <strong>Preview</strong> and <strong>download</strong> require a quick sign-in with your <strong>.edu</strong> email.
             </p>
         </div>
     </section>
@@ -341,12 +353,12 @@
         <article class="home-feature home-feature--orange">
             <div class="home-feature-icon" aria-hidden="true">📚</div>
             <h3>Materials in one place</h3>
-            <p>Handouts, slides, and more: preview in a new tab when the file type allows, or download in one click.</p>
+            <p>Handouts, slides, and more: after you sign in, open a preview in a new tab when the file type allows, or download in one click.</p>
         </article>
         <article class="home-feature home-feature--edu">
             <div class="home-feature-icon" aria-hidden="true">🎓</div>
             <h3>Your .edu access</h3>
-            <p>Sign up with your university email to browse and download. One account keeps the library simple and faculty-focused.</p>
+            <p>Sign up with your university email to preview and download. Browsing the catalog stays open to everyone; one account keeps file access faculty-focused.</p>
         </article>
     </section>
 
@@ -355,7 +367,8 @@
         <p>Ready to explore?</p>
         <a href="{% url 'activities:list' %}" class="btn">Go to activity list</a>
         {% else %}
-        <p>Sign in with your university email to browse and download.</p>
+        <p>Browse without an account, or sign in with your university email to preview and download materials.</p>
+        <a href="{% url 'activities:list' %}" class="btn btn-outline">Browse activities</a>
         <a href="{% url 'accounts:register' %}" class="btn">Create account</a>
         {% endif %}
     </section>
