@@ -26,7 +26,20 @@ SECRET_KEY = 'django-insecure-&b0sm4$y3=4nkqm(#)np@b1atwcdc@u_$t_#-3&vw-kw$v2at$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Use one hostname in the browser (localhost *or* 127.0.0.1). Mixing them breaks CSRF cookies.
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        "http://127.0.0.1:8000,http://localhost:8000",
+    ).split(",")
+    if o.strip()
+]
 
 
 # Application definition

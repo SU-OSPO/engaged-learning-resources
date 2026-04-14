@@ -7,7 +7,7 @@ __pycache__/
 *.egg-info/
 *.egg
 
-# Virtual environments
+# Virtual environments & secrets (copy .env.example → .env locally; never commit .env)
 .env
 .envrc
 .venv
