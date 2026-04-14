@@ -25,6 +25,7 @@
             --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
         }
         * { box-sizing: border-box; }
+        /* Sticky footer: short pages keep footer at bottom of viewport */
         .sr-only {
             position: absolute;
             width: 1px;
@@ -38,6 +39,9 @@
         }
         body {
             margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             font-family: 'Source Sans 3', -apple-system, sans-serif;
             font-size: 16px;
             line-height: 1.4;
@@ -45,6 +49,7 @@
             background: var(--su-white);
         }
         .header {
+            flex-shrink: 0;
             background: var(--su-navy);
             color: white;
             padding: 0.75rem 2rem;
@@ -263,6 +268,8 @@
             .nav .nav-link-btn::after { transition: none; }
         }
         .main {
+            flex: 1 1 auto;
+            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
@@ -276,10 +283,11 @@
             border-bottom: 3px solid var(--su-orange);
         }
         .footer {
+            flex-shrink: 0;
             background: var(--su-navy);
             color: rgba(255,255,255,0.9);
             padding: 2rem;
-            margin-top: 3rem;
+            margin-top: 0;
             text-align: center;
             font-size: 0.9rem;
         }
