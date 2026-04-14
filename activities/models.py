@@ -31,6 +31,21 @@ class Tag(models.Model):
     class Meta:
         ordering = ["name"]
 
+    @property
+    def display_name(self) -> str:
+        """How the tag appears on the site (title-style); storage stays lowercase-friendly."""
+        if not self.name:
+            return ""
+        out: list[str] = []
+        for word in self.name.strip().split():
+            out.append(
+                "-".join(
+                    (p[0].upper() + p[1:].lower()) if len(p) > 1 else p.upper()
+                    for p in word.split("-")
+                )
+            )
+        return " ".join(out)
+
     def __str__(self):
         return self.name
 

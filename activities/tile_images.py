@@ -5,8 +5,8 @@ Default: a stable image per activity from a small set of education-themed Unspla
 (images.unsplash.com), via ``activity.id % len(urls)``.
 
 Themed override: when title, description, slug, category, or tags suggest a scavenger hunt,
-outdoor group activity, or puzzle-solving activity, use a matching Unsplash image from the
-same source (Unsplash License).
+outdoor group activity, puzzle-solving activity, or a civics lesson that mentions both
+religion and government, use a matching Unsplash image from the same source (Unsplash License).
 """
 
 from __future__ import annotations
@@ -24,6 +24,10 @@ _IMAGE_PUZZLE = f"https://images.unsplash.com/photo-1601063987324-7b482964872b{_
 # Group outdoors / trail: hiking & team activities (Unsplash)
 _IMAGE_OUTDOOR_GROUP = (
     f"https://images.unsplash.com/photo-1529333166437-7750a6dd5a70{_URL_Q}"
+)
+# Seminar / group discussion — civics & social-systems lessons (college-age context)
+_IMAGE_CIVICS_SEMINAR = (
+    f"https://images.unsplash.com/photo-1531482615713-2afd69097998{_URL_Q}"
 )
 
 _EDUCATION_IMAGES: List[str] = [
@@ -61,6 +65,9 @@ def _haystack_lower(activity) -> str:
 
 def _themed_tile_url(hay: str) -> Optional[str]:
     """Return a themed tile URL or None to use the default pool."""
+    # Civics / comparative systems (religion + government in one lesson, incl. “governance”)
+    if "religion" in hay and ("government" in hay or "governance" in hay):
+        return _IMAGE_CIVICS_SEMINAR
     # HR / admissions-style copy often mentions "orientation" or "team"; keep the
     # stable id-based pool image (what showed before themed overrides).
     if any(

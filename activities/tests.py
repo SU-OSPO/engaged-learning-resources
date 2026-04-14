@@ -19,6 +19,11 @@ class ModelTests(TestCase):
         self.assertEqual(tag.name, "group")
         self.assertEqual(str(tag), "group")
 
+    def test_tag_display_name(self):
+        self.assertEqual(Tag.objects.create(name="critical thinking").display_name, "Critical Thinking")
+        self.assertEqual(Tag.objects.create(name="single-class").display_name, "Single-Class")
+        self.assertEqual(Tag.objects.create(name="GROUP").display_name, "Group")
+
     def test_tag_unique_name(self):
         Tag.objects.create(name="homework")
         with self.assertRaises(IntegrityError):
@@ -201,6 +206,12 @@ class TagListTests(TestCase):
         names = [t["name"] for t in data["tags"]]
         self.assertIn("group", names)
         self.assertIn("homework", names)
+        for t in data["tags"]:
+            self.assertIn("display_name", t)
+        self.assertEqual(
+            next(t["display_name"] for t in data["tags"] if t["name"] == "group"),
+            "Group",
+        )
 
 
 class CategoryListTests(TestCase):

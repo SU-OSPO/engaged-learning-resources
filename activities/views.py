@@ -243,7 +243,7 @@ def activity_list(request):
 
     # HTML response
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
-        tags = list(Tag.objects.order_by("name").values("id", "name"))
+        tags = Tag.objects.order_by("name")
         categories = list(Category.objects.order_by("name").values("id", "name", "description"))
         pagination_params = {k: v for k, v in request.GET.items() if k != "page"}
         pagination_base = urlencode(pagination_params) if pagination_params else ""
@@ -274,6 +274,7 @@ def activity_list(request):
             "category": a.category.name if a.category else None,
             "category_id": a.category_id,
             "tags": [t.name for t in a.tags.all()],
+            "tags_display": [t.display_name for t in a.tags.all()],
             "created_at": a.created_at.isoformat(),
         }
         for a in page_obj.object_list
@@ -317,6 +318,7 @@ def activity_detail(request, slug):
             "category": activity.category.name if activity.category else None,
             "category_id": activity.category_id,
             "tags": [t.name for t in activity.tags.all()],
+            "tags_display": [t.display_name for t in activity.tags.all()],
             "materials": materials,
             "created_at": activity.created_at.isoformat(),
             "updated_at": activity.updated_at.isoformat(),
@@ -327,8 +329,11 @@ def activity_detail(request, slug):
 @require_GET
 def tag_list(request):
     """List all tags for filter dropdowns."""
-    tags = Tag.objects.order_by("name").values("id", "name")
-    return JsonResponse({"tags": list(tags)})
+    tags = [
+        {"id": t.id, "name": t.name, "display_name": t.display_name}
+        for t in Tag.objects.order_by("name")
+    ]
+    return JsonResponse({"tags": tags})
 
 
 @require_GET

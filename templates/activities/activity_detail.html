@@ -193,7 +193,7 @@
 <div class="detail-tags-wrap">
     <div class="tags">
         {% for tag in activity.tags.all %}
-        <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag }}</span>
+        <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag.display_name }}</span>
         {% endfor %}
     </div>
 </div>

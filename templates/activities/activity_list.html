@@ -550,7 +550,7 @@
                     <select name="tag" id="tag">
                         <option value="">All tags</option>
                         {% for tag in tags %}
-                        <option value="{{ tag.name }}" {% if request.GET.tag == tag.name %}selected{% endif %}>{{ tag.name }}</option>
+                        <option value="{{ tag.name }}" {% if request.GET.tag == tag.name %}selected{% endif %}>{{ tag.display_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -596,7 +596,7 @@
             {% if activity.tags.all %}
             <div class="tags">
                 {% for tag in activity.tags.all %}
-                <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag }}</span>
+                <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag.display_name }}</span>
                 {% endfor %}
             </div>
             {% endif %}
