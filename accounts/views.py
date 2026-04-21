@@ -4,12 +4,13 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 
-from .forms import SignUpForm
+from .forms import SignUpForm, TeachOrangeAuthenticationForm
 
 
 class TeachOrangeLoginView(LoginView):
     template_name = "registration/login.html"
     redirect_authenticated_user = True
+    authentication_form = TeachOrangeAuthenticationForm
 
 
 class TeachOrangeLogoutView(LogoutView):

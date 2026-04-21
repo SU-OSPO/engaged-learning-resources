@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core import mail
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -79,3 +80,45 @@ class LoginRequiredTests(TestCase):
             {"username": "u@school.edu", "password": "pw"},
         )
         self.assertEqual(resp.status_code, 302)
+
+    def test_login_rejects_non_edu_email(self):
+        User.objects.create_user(
+            username="legacy@gmail.com",
+            email="legacy@gmail.com",
+            password="pw",
+        )
+        resp = self.client.post(
+            reverse("accounts:login"),
+            {"username": "legacy@gmail.com", "password": "pw"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "university email")
+
+
+class PasswordResetEduTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User.objects.create_user(
+            username="faculty@school.edu",
+            email="faculty@school.edu",
+            password="old-secret-123",
+        )
+
+    def test_password_reset_rejects_non_edu(self):
+        mail.outbox.clear()
+        resp = self.client.post(
+            reverse("accounts:password_reset"),
+            {"email": "someone@gmail.com"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertContains(resp, "university email")
+
+    def test_password_reset_sends_for_edu(self):
+        mail.outbox.clear()
+        resp = self.client.post(
+            reverse("accounts:password_reset"),
+            {"email": "faculty@school.edu"},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)

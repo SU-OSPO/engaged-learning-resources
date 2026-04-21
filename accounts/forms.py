@@ -1,6 +1,22 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.conf import settings
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordResetForm,
+    UserCreationForm,
+)
 from django.contrib.auth.models import User
+
+
+def validate_faculty_email(email: str) -> str:
+    """Normalize email or raise ValidationError if the domain suffix is not allowed."""
+    normalized = (email or "").strip().lower()
+    suffixes = getattr(settings, "ALLOWED_EMAIL_SUFFIXES", (".edu",))
+    if not normalized or not any(normalized.endswith(s) for s in suffixes):
+        raise forms.ValidationError(
+            "Use a university email address ending in: " + ", ".join(suffixes)
+        )
+    return normalized
 
 
 class SignUpForm(UserCreationForm):
@@ -26,13 +42,14 @@ class SignUpForm(UserCreationForm):
         return user
 
     def clean_username(self):
-        username = self.cleaned_data["username"].strip().lower()
-        from django.conf import settings
+        return validate_faculty_email(self.cleaned_data["username"])
 
-        suffixes = getattr(settings, "ALLOWED_EMAIL_SUFFIXES", (".edu",))
-        if not any(username.endswith(s) for s in suffixes):
-            raise forms.ValidationError(
-                "Registration requires a university email address ending in: "
-                + ", ".join(suffixes)
-            )
-        return username
+
+class TeachOrangeAuthenticationForm(AuthenticationForm):
+    def clean_username(self):
+        return validate_faculty_email(self.cleaned_data["username"])
+
+
+class EduPasswordResetForm(PasswordResetForm):
+    def clean_email(self):
+        return validate_faculty_email(self.cleaned_data["email"])
