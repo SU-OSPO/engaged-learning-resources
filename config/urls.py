@@ -1,6 +1,9 @@
 """
 URL configuration for config project.
 
+Project-wide 404/500 use Django defaults (HTML) for /admin/ and public pages; views
+return JSON from json_error_response only where explicitly used (e.g. activities).
+
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
 Examples:
@@ -14,8 +17,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-handler404 = "config.error_handlers.handler404"
-handler500 = "config.error_handlers.handler500"
 
 from django.contrib import admin
 from django.urls import path, include
