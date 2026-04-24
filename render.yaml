@@ -1,0 +1,38 @@
+# Optional Render Blueprint — create services from this repo, or set the same
+# options manually in the Render dashboard: https://render.com/docs/blueprint-spec
+#
+# 1) Push this branch to GitHub/GitLab and connect the repo in Render.
+# 2) Create a PostgreSQL database, then a Web Service from the same repo.
+# 3) Add env vars (see list below) or adjust `envVars` here.
+
+databases:
+  - name: ospo-postgres
+    plan: free
+    region: oregon
+    databaseName: teaching_activities
+    user: ospo
+
+services:
+  - type: web
+    name: ospo-web
+    region: oregon
+    plan: free
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      # Optional: add custom domains, e.g. "example.com,www.example.com" (also add in Render
+      # dashboard → custom domains, and append the https origin to CSRF in the dashboard).
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ospo-postgres
+          property: connectionString

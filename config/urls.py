@@ -25,6 +25,7 @@ from .media_serve import protected_media
 
 urlpatterns = [
     path("", activities_views.home, name="home"),
+    path("contact/", activities_views.contact, name="contact"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("activities/", include("activities.urls")),

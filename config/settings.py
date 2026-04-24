@@ -21,18 +21,29 @@ load_dotenv(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&b0sm4$y3=4nkqm(#)np@b1atwcdc@u_$t_#-3&vw-kw$v2at$'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-&b0sm4$y3=4nkqm(#)np@b1atwcdc@u_$t_#-3&vw-kw$v2at$",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Local default True; on Render set DJANGO_DEBUG=0 (or false).
+_e = (os.environ.get("DJANGO_DEBUG", "1") or "1").lower()
+DEBUG = _e in ("1", "true", "yes", "on")
 
 # Use one hostname in the browser (localhost *or* 127.0.0.1). Mixing them breaks CSRF cookies.
-ALLOWED_HOSTS = [
+# On Render, `RENDER_EXTERNAL_HOSTNAME` and `RENDER_EXTERNAL_URL` are set automatically.
+_allowed = [
     h.strip()
     for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
     if h.strip()
 ]
-CSRF_TRUSTED_ORIGINS = [
+_render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if _render_host and _render_host not in _allowed:
+    _allowed.append(_render_host)
+ALLOWED_HOSTS = _allowed
+
+_csrf = [
     o.strip()
     for o in os.environ.get(
         "DJANGO_CSRF_TRUSTED_ORIGINS",
@@ -40,6 +51,17 @@ CSRF_TRUSTED_ORIGINS = [
     ).split(",")
     if o.strip()
 ]
+_render_url = os.environ.get("RENDER_EXTERNAL_URL", "").strip()
+if _render_url and _render_url not in _csrf:
+    _csrf.append(_render_url)
+CSRF_TRUSTED_ORIGINS = _csrf
+
+# Render (and most PaaS) terminate TLS; Django sees HTTP from the proxy.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # Application definition
@@ -57,6 +79,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -90,16 +113,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'teaching_activities',
-        'USER': 'abhijnyakg',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '5432',
+# Local: set credentials here or in `.env`. On Render, link a PostgreSQL service — it
+# injects `DATABASE_URL` (use Internal URL for the web service).
+if os.environ.get("DATABASE_URL"):
+    import dj_database_url
+
+    DATABASES = {
+        "default": dj_database_url.config(
+            conn_max_age=600,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "teaching_activities"),
+            "USER": os.environ.get("POSTGRES_USER", "abhijnyakg"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        }
+    }
 
 
 # Password validation
@@ -136,7 +170,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# Serve collected static files in production (e.g. Render) without a separate nginx bucket.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # Media files (activity materials stored on server)
 MEDIA_URL = 'media/'

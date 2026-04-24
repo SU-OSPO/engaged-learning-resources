@@ -193,7 +193,7 @@
 <div class="detail-tags-wrap">
     <div class="tags">
         {% for tag in activity.tags.all %}
-        <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag.display_name }}</span>
+        <a href="{% url 'activities:list' %}?tag={{ tag.name|urlencode }}" class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}" aria-label="Show activities tagged {{ tag.display_name }}">{{ tag.display_name }}</a>
         {% endfor %}
     </div>
 </div>

@@ -596,7 +596,7 @@
             {% if activity.tags.all %}
             <div class="tags">
                 {% for tag in activity.tags.all %}
-                <span class="tag tag-chip" style="--tag-i: {{ forloop.counter0 }}">{{ tag.display_name }}</span>
+                <a href="{% url 'activities:list' %}?tag={{ tag.name|urlencode }}" class="tag tag-chip{% if request.GET.tag|lower == tag.name|lower %} tag-chip--filter-active{% endif %}" style="--tag-i: {{ forloop.counter0 }}" aria-label="Show activities tagged {{ tag.display_name }}">{{ tag.display_name }}</a>
                 {% endfor %}
             </div>
             {% endif %}

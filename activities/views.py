@@ -187,6 +187,12 @@ def home(request):
     return render(request, "home.html")
 
 
+@require_GET
+def contact(request):
+    """Contact and team page."""
+    return render(request, "contact.html")
+
+
 def _get_filtered_queryset(request):
     """Build filtered activity queryset from request params."""
     qs = Activity.objects.select_related("category").prefetch_related("tags", "materials")

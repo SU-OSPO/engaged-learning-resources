@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact &amp; team{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contact-page {
+        max-width: 920px;
+        margin: 0 auto;
+    }
+    .contact-intro {
+        margin: 0 0 2rem;
+        color: #444;
+        line-height: 1.65;
+        font-size: 1.02rem;
+    }
+    .contact-intro a {
+        color: var(--su-navy);
+        font-weight: 600;
+    }
+    .contact-intro a:hover {
+        color: var(--su-orange-dark);
+    }
+    .section-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--su-orange-dark);
+        margin: 0 0 0.5rem;
+    }
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--su-navy);
+        margin: 0 0 1.25rem;
+    }
+    /* Photos: add files to static/team/ (see filenames in template). */
+    .person-photo {
+        position: relative;
+        flex-shrink: 0;
+        width: 112px;
+        height: 112px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: linear-gradient(145deg, #e8eef4 0%, #d4dde8 100%);
+        border: 3px solid rgba(247, 105, 0, 0.35);
+        box-shadow: 0 6px 20px rgba(13, 45, 76, 0.12);
+    }
+    .person-photo--lead {
+        width: 140px;
+        height: 140px;
+        border-width: 4px;
+    }
+    .person-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .person-photo img.is-hidden {
+        display: none;
+    }
+    .person-photo-fallback {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--su-navy);
+        letter-spacing: 0.02em;
+        user-select: none;
+    }
+    .person-photo--lead .person-photo-fallback {
+        font-size: 2rem;
+    }
+    .person-photo.has-fallback .person-photo-fallback {
+        display: flex;
+    }
+    .lead-card {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        align-items: center;
+        text-align: center;
+        background: linear-gradient(165deg, #ffffff 0%, #fafcfe 100%);
+        border: 1px solid rgba(13, 45, 76, 0.12);
+        border-radius: 16px;
+        padding: 1.75rem 1.5rem 1.5rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 8px 32px rgba(13, 45, 76, 0.08);
+        border-top: 4px solid var(--su-orange);
+    }
+    @media (min-width: 640px) {
+        .lead-card {
+            flex-direction: row;
+            align-items: flex-start;
+            text-align: left;
+            padding: 1.75rem 2rem;
+        }
+    }
+    .lead-body {
+        flex: 1;
+        min-width: 0;
+    }
+    .lead-card h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--su-navy);
+        line-height: 1.2;
+    }
+    .lead-card .role {
+        margin: 0 0 1rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--su-gray-dark);
+        line-height: 1.45;
+    }
+    .lead-card dl {
+        margin: 0;
+        font-size: 0.92rem;
+        line-height: 1.5;
+    }
+    .lead-card dt {
+        margin: 0.6rem 0 0.12rem;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #666;
+    }
+    .lead-card dt:first-of-type {
+        margin-top: 0;
+    }
+    .lead-card dd {
+        margin: 0;
+        color: #333;
+    }
+    .lead-card a {
+        color: var(--su-navy);
+        font-weight: 600;
+        text-decoration: underline;
+        text-decoration-color: rgba(247, 105, 0, 0.45);
+        text-underline-offset: 2px;
+    }
+    .lead-card a:hover {
+        color: var(--su-orange-dark);
+    }
+    .team-grid {
+        display: grid;
+        gap: 1.25rem;
+    }
+    @media (min-width: 700px) {
+        .team-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    .team-card {
+        background: linear-gradient(165deg, #ffffff 0%, #fafcfe 100%);
+        border: 1px solid rgba(13, 45, 76, 0.12);
+        border-radius: 14px;
+        padding: 1.35rem 1.15rem 1.25rem;
+        box-shadow: 0 6px 24px rgba(13, 45, 76, 0.07);
+        border-top: 3px solid var(--brand-teach-mid);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .team-card h3 {
+        margin: 0.85rem 0 0.35rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--su-navy);
+        line-height: 1.25;
+    }
+    .team-card .role {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--su-gray-dark);
+        line-height: 1.45;
+    }
+    .contact-footnote {
+        margin: 2rem 0 0;
+        padding: 1rem 1.15rem;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: #1e3a5f;
+        line-height: 1.55;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contact-page">
+    <h1 class="page-title">Contact us</h1>
+    <p class="contact-intro">
+        Questions about <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span>, contributing activities, or faculty access?
+        Contact <strong>Mark D. Brockway</strong> (lead). <strong>Benjamin Katz</strong> and <strong>Sadie Rose Lehrfeld</strong> gathered the teaching resources; <strong>Abhijnya Konanduru Gurumurthy</strong> built this website.
+    </p>
+
+    <p class="section-label">Faculty lead</p>
+    <section class="lead-card" aria-labelledby="lead-name">
+        <figure class="person-photo person-photo--lead" id="photo-mark">
+            <img src="{% static 'team/mark-brockway.jpg' %}" alt="Mark D. Brockway" width="140" height="140" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
+            <span class="person-photo-fallback" aria-hidden="true">MB</span>
+        </figure>
+        <div class="lead-body">
+            <h2 id="lead-name">Mark D. Brockway</h2>
+            <p class="role">Assistant Teaching Professor, Political Science · Maxwell School of Citizenship and Public Affairs, Syracuse University</p>
+            <dl>
+                <dt>Email</dt>
+                <dd><a href="mailto:mdbrockw@syr.edu">mdbrockw@syr.edu</a></dd>
+                <dt>Phone</dt>
+                <dd><a href="tel:+13154432416">315.443.2416</a></dd>
+                <dt>Office</dt>
+                <dd>100 Eggers Hall, Syracuse, NY 13244</dd>
+            </dl>
+        </div>
+    </section>
+
+    <p class="section-label">Student team</p>
+    <h2 class="section-title">Resources &amp; website</h2>
+    <div class="team-grid">
+        <article class="team-card" aria-labelledby="name-benjamin">
+            <figure class="person-photo" id="photo-benjamin">
+                <img src="{% static 'team/benjamin-katz.jpg' %}" alt="Benjamin Katz" width="112" height="112" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
+                <span class="person-photo-fallback" aria-hidden="true">BK</span>
+            </figure>
+            <h3 id="name-benjamin">Benjamin Katz</h3>
+            <p class="role">Collected teaching resources · Syracuse University</p>
+        </article>
+        <article class="team-card" aria-labelledby="name-sadie">
+            <figure class="person-photo" id="photo-sadie">
+                <img src="{% static 'team/sadie-lehrfeld.jpg' %}" alt="Sadie Rose Lehrfeld" width="112" height="112" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
+                <span class="person-photo-fallback" aria-hidden="true">SL</span>
+            </figure>
+            <h3 id="name-sadie">Sadie Rose Lehrfeld</h3>
+            <p class="role">Collected teaching resources · Syracuse University</p>
+        </article>
+        <article class="team-card" aria-labelledby="name-abhijnya">
+            <figure class="person-photo" id="photo-abhijnya">
+                <img src="{% static 'team/abhijnya-konanduru-gurumurthy.jpg' %}" alt="Abhijnya Konanduru Gurumurthy" width="112" height="112" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
+                <span class="person-photo-fallback" aria-hidden="true">AK</span>
+            </figure>
+            <h3 id="name-abhijnya">Abhijnya Konanduru Gurumurthy</h3>
+            <p class="role">Website &amp; platform development · Syracuse University</p>
+        </article>
+    </div>
+
+    <p class="contact-footnote">
+        <strong>Faculty accounts</strong> use a verified <strong>.edu</strong> email. If you need help with registration, password reset, or materials access, email <a href="mailto:mdbrockw@syr.edu">mdbrockw@syr.edu</a> and include your university address.
+    </p>
+</div>
+{% endblock %}
