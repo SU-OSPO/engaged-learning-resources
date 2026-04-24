@@ -185,6 +185,32 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# With DEBUG=False, Django's default "console" handler is filtered (require_debug_true),
+# so 5xx often do not appear in Gunicorn/Render logs. Log django.request to stdout with
+# full tracebacks when you reproduce a 500 (Service → Logs, then reload the page).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "request_err": {
+            "format": "%(levelname)s %(asctime)s [%(name)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "request_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "request_err",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["request_console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
 # Auth (TeachOrange)
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/activities/"

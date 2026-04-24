@@ -69,7 +69,9 @@ class TagAdmin(admin.ModelAdmin):
 class ActivityAdmin(admin.ModelAdmin):
     form = ActivityAdminForm
     list_display = ["title", "slug", "category", "created_at"]
-    list_filter = ["category", "created_at"]
+    # Category only: date-based list_filter on created_at has caused 500s on some
+    # PostgreSQL + admin setups; use search or ordering for time-based triage.
+    list_filter = ["category"]
     search_fields = ["title", "description"]
     inlines = [ActivityTagInline, MaterialInline]
 
