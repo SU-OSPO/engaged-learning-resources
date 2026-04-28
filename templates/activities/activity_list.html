@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load activity_icons %}
 
 {% block title %}Browse Activities{% endblock %}
 
@@ -487,6 +488,40 @@
     .list-auth-banner .btn {
         flex-shrink: 0;
     }
+    .tag-filter-banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem 1rem;
+        margin: 0 0 1rem;
+        padding: 0.65rem 1rem;
+        background: rgba(247, 105, 0, 0.1);
+        border: 1px solid rgba(247, 105, 0, 0.35);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: var(--su-navy);
+    }
+    .tag-filter-banner strong {
+        font-weight: 700;
+        color: var(--su-orange);
+    }
+    .tag-filter-banner .tag-filter-remove {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--su-navy);
+        text-decoration: none;
+        border-radius: 8px;
+        border: 1px solid rgba(13, 45, 76, 0.2);
+        background: #fff;
+    }
+    .tag-filter-banner .tag-filter-remove:hover {
+        border-color: var(--su-orange);
+        color: var(--su-orange);
+    }
 </style>
 {% endblock %}
 
@@ -514,7 +549,7 @@
                     </div>
                 </div>
             </div>
-            {% if request.GET.q or request.GET.category or request.GET.tag or request.GET.sort and request.GET.sort != '-created_at' %}
+            {% if has_active_filters %}
             <a href="{% url 'activities:list' %}" class="filters-clear">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 Clear all filters
@@ -577,6 +612,13 @@
 
 <p class="results-count">{{ total }} activit{{ total|pluralize:"y,ies" }} found</p>
 
+{% if active_filtered_tag %}
+<div class="tag-filter-banner" role="status">
+    Showing activities tagged <strong>{{ active_filtered_tag.display_name }}</strong>.
+    <a href="{% url 'activities:list' %}{% if clear_tag_query %}?{{ clear_tag_query }}{% endif %}" class="tag-filter-remove">Remove tag filter</a>
+</div>
+{% endif %}
+
 {% if activity_rows %}
 <div class="activity-grid">
     {% for row in activity_rows %}
@@ -596,7 +638,7 @@
             {% if activity.tags.all %}
             <div class="tags">
                 {% for tag in activity.tags.all %}
-                <a href="{% url 'activities:list' %}?tag={{ tag.name|urlencode }}" class="tag tag-chip{% if request.GET.tag|lower == tag.name|lower %} tag-chip--filter-active{% endif %}" style="--tag-i: {{ forloop.counter0 }}" aria-label="Show activities tagged {{ tag.display_name }}">{{ tag.display_name }}</a>
+                <a href="{% url 'activities:list' %}{% if request.GET.tag|lower == tag.name|lower %}{% if clear_tag_query %}?{{ clear_tag_query }}{% endif %}{% else %}?{{ tag_apply_queries|get_item:tag.name }}{% endif %}" class="tag tag-chip{% if request.GET.tag|lower == tag.name|lower %} tag-chip--filter-active{% endif %}" style="--tag-i: {{ forloop.counter0 }}" {% if request.GET.tag|lower == tag.name|lower %}aria-label="Remove tag filter {{ tag.display_name }}"{% else %}aria-label="Show activities tagged {{ tag.display_name }}"{% endif %}>{{ tag.display_name }}{% if request.GET.tag|lower == tag.name|lower %} <span class="tag-chip-remove" aria-hidden="true">&times;</span>{% endif %}</a>
                 {% endfor %}
             </div>
             {% endif %}

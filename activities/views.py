@@ -249,10 +249,39 @@ def activity_list(request):
 
     # HTML response
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
-        tags = Tag.objects.order_by("name")
+        tags_qs = Tag.objects.order_by("name")
+        tags = list(tags_qs)
         categories = list(Category.objects.order_by("name").values("id", "name", "description"))
         pagination_params = {k: v for k, v in request.GET.items() if k != "page"}
         pagination_base = urlencode(pagination_params) if pagination_params else ""
+        # Query string without tag/page (preserve q, category, sort) — for clearing tag chips + banner link
+        get_no_tag_no_page = request.GET.copy()
+        get_no_tag_no_page.pop("page", None)
+        get_no_tag_no_page.pop("tag", None)
+        clear_tag_query = get_no_tag_no_page.urlencode()
+        # Preserve other filters when clicking a tag on a card (reset page when tag changes)
+        tag_apply_queries = {}
+        for tag in tags:
+            gb = request.GET.copy()
+            gb.pop("page", None)
+            gb["tag"] = tag.name
+            tag_apply_queries[tag.name] = gb.urlencode()
+        active_filtered_tag = None
+        tag_param = request.GET.get("tag", "").strip()
+        if tag_param:
+            for tag in tags:
+                if tag.name.lower() == tag_param.lower():
+                    active_filtered_tag = tag
+                    break
+        has_active_filters = bool(
+            request.GET.get("q", "").strip()
+            or request.GET.get("category", "").strip()
+            or request.GET.get("tag", "").strip()
+            or (
+                request.GET.get("sort", "").strip()
+                and request.GET.get("sort") != "-created_at"
+            )
+        )
         activity_rows = [
             {"activity": a, "tile_image": tile_image_url(a)}
             for a in page_obj.object_list
@@ -265,6 +294,10 @@ def activity_list(request):
                 "page_obj": page_obj,
                 "total": paginator.count,
                 "tags": tags,
+                "tag_apply_queries": tag_apply_queries,
+                "clear_tag_query": clear_tag_query,
+                "active_filtered_tag": active_filtered_tag,
+                "has_active_filters": has_active_filters,
                 "categories": categories,
                 "pagination_base": pagination_base,
             },

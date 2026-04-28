@@ -38,3 +38,14 @@ MATERIAL_TYPE_EMOJI = {
 @register.filter
 def material_type_emoji(material_type_key):
     return MATERIAL_TYPE_EMOJI.get(material_type_key, "📎")
+
+
+@register.filter
+def get_item(mapping, key):
+    """Lookup for dict-like objects in templates: {{ tag_apply_queries|get_item:tag.name }}"""
+    if mapping is None:
+        return ""
+    try:
+        return mapping.get(str(key), "")
+    except AttributeError:
+        return ""
