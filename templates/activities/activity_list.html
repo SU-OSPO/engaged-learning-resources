@@ -615,7 +615,7 @@
 {% if active_filtered_tag %}
 <div class="tag-filter-banner" role="status">
     Showing activities tagged <strong>{{ active_filtered_tag.display_name }}</strong>.
-    <a href="{% url 'activities:list' %}{% if clear_tag_query %}?{{ clear_tag_query }}{% endif %}" class="tag-filter-remove">Remove tag filter</a>
+    <a href="{{ clear_tag_url }}" class="tag-filter-remove">Remove tag filter</a>
 </div>
 {% endif %}
 
@@ -638,7 +638,7 @@
             {% if activity.tags.all %}
             <div class="tags">
                 {% for tag in activity.tags.all %}
-                <a href="{% url 'activities:list' %}{% if request.GET.tag|lower == tag.name|lower %}{% if clear_tag_query %}?{{ clear_tag_query }}{% endif %}{% else %}?{{ tag_apply_queries|get_item:tag.name }}{% endif %}" class="tag tag-chip{% if request.GET.tag|lower == tag.name|lower %} tag-chip--filter-active{% endif %}" style="--tag-i: {{ forloop.counter0 }}" {% if request.GET.tag|lower == tag.name|lower %}aria-label="Remove tag filter {{ tag.display_name }}"{% else %}aria-label="Show activities tagged {{ tag.display_name }}"{% endif %}>{{ tag.display_name }}{% if request.GET.tag|lower == tag.name|lower %} <span class="tag-chip-remove" aria-hidden="true">&times;</span>{% endif %}</a>
+                <a href="{% if active_tag_name and tag.name|lower == active_tag_name %}{{ clear_tag_url }}{% else %}{% url 'activities:list' %}?{{ tag_apply_queries|get_item:tag.name }}{% endif %}" class="tag tag-chip{% if active_tag_name and tag.name|lower == active_tag_name %} tag-chip--filter-active{% endif %}" style="--tag-i: {{ forloop.counter0 }}; position: relative; z-index: 1;" {% if active_tag_name and tag.name|lower == active_tag_name %}aria-label="Remove tag filter {{ tag.display_name }}"{% else %}aria-label="Show activities tagged {{ tag.display_name }}"{% endif %}>{{ tag.display_name }}{% if active_tag_name and tag.name|lower == active_tag_name %} <span class="tag-chip-remove" aria-hidden="true">&times;</span>{% endif %}</a>
                 {% endfor %}
             </div>
             {% endif %}

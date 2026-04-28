@@ -251,6 +251,7 @@ def activity_list(request):
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
         tags_qs = Tag.objects.order_by("name")
         tags = list(tags_qs)
+        tag_param = request.GET.get("tag", "").strip()
         categories = list(Category.objects.order_by("name").values("id", "name", "description"))
         pagination_params = {k: v for k, v in request.GET.items() if k != "page"}
         pagination_base = urlencode(pagination_params) if pagination_params else ""
@@ -259,6 +260,12 @@ def activity_list(request):
         get_no_tag_no_page.pop("page", None)
         get_no_tag_no_page.pop("tag", None)
         clear_tag_query = get_no_tag_no_page.urlencode()
+        list_reverse = reverse("activities:list")
+        if clear_tag_query:
+            clear_tag_url = f"{list_reverse}?{clear_tag_query}"
+        else:
+            clear_tag_url = list_reverse
+        active_tag_name = tag_param.lower() if tag_param else ""
         # Preserve other filters when clicking a tag on a card (reset page when tag changes)
         tag_apply_queries = {}
         for tag in tags:
@@ -267,7 +274,6 @@ def activity_list(request):
             gb["tag"] = tag.name
             tag_apply_queries[tag.name] = gb.urlencode()
         active_filtered_tag = None
-        tag_param = request.GET.get("tag", "").strip()
         if tag_param:
             for tag in tags:
                 if tag.name.lower() == tag_param.lower():
@@ -296,6 +302,8 @@ def activity_list(request):
                 "tags": tags,
                 "tag_apply_queries": tag_apply_queries,
                 "clear_tag_query": clear_tag_query,
+                "clear_tag_url": clear_tag_url,
+                "active_tag_name": active_tag_name,
                 "active_filtered_tag": active_filtered_tag,
                 "has_active_filters": has_active_filters,
                 "categories": categories,
