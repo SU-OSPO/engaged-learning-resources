@@ -36,8 +36,8 @@ jobs:
 
     env:
       DATABASE_URL: postgres://teachorange:teachorange@localhost:5432/teaching_activities
-      DJANGO_SECRET_KEY: ci-only-not-a-real-secret
-      DJANGO_DEBUG: "0"
+      # Throwaway, CI-only. Long enough that check --deploy does not flag W009.
+      DJANGO_SECRET_KEY: HwwcQDBRUmk1raCW9FXjE8W1JYyUL7ohGESMH07TBD5tG7qGK2yKohHpyn6g564F
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
       DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost,http://127.0.0.1
 
@@ -54,8 +54,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # DJANGO_DEBUG must stay truthy here. settings.py enables SECURE_SSL_REDIRECT
+      # when DEBUG is false, which makes the test client receive a 301 to https
+      # instead of reaching any view.
       - name: Run tests
+        env:
+          DJANGO_DEBUG: "1"
         run: python manage.py test --verbosity 2
 
+      # These checks are only meaningful with production settings active.
+      # Fails on ERROR only. check --deploy also warns about HSTS
+      # includeSubDomains (W005) and preload (W021); both are deliberate
+      # decisions about the domain rather than things CI should force.
       - name: Django deployment checks
-        run: python manage.py check --deploy --fail-level WARNING
+        env:
+          DJANGO_DEBUG: "0"
+        run: python manage.py check --deploy --fail-level ERROR
