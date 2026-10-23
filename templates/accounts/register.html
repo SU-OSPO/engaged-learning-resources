@@ -67,7 +67,7 @@
 {% block content %}
 <div class="auth-card">
     <h1>Join <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span></h1>
-    <p class="auth-sub">Register with your Syracuse University email (<strong>@syr.edu</strong>) to preview PDFs and download materials.</p>
+    <p class="auth-sub">Register with your university email (<strong>.edu</strong>) to preview PDFs and download materials.</p>
     <form method="post" action="{% url 'accounts:register' %}">
         {% csrf_token %}
         {% if form.non_field_errors %}<ul class="errorlist">{{ form.non_field_errors }}</ul>{% endif %}
@@ -171,16 +171,16 @@
         function evalEmail() {
             if (!emailHint || !email) return;
             var v = (email.value || '').trim().toLowerCase();
-            var isSyr = v.indexOf('@') > 0 && /@syr\.edu$/.test(v);
+            var isEdu = v.indexOf('@') > 0 && /\.edu$/.test(v);
             var completedDomain = /@[^\s@]+\.[a-z]{2,}$/.test(v);
-            if (isSyr) {
+            if (isEdu) {
                 emailHint.hidden = false;
                 emailHint.className = 'email-hint ok';
-                emailHint.innerHTML = CHECK + '<span>Syracuse email</span>';
+                emailHint.innerHTML = CHECK + '<span>University email</span>';
             } else if (completedDomain) {
                 emailHint.hidden = false;
                 emailHint.className = 'email-hint bad';
-                emailHint.innerHTML = CROSS + '<span>Must be a Syracuse address ending in @syr.edu</span>';
+                emailHint.innerHTML = CROSS + '<span>Must be a university address ending in .edu</span>';
             } else {
                 emailHint.hidden = true;
                 emailHint.innerHTML = '';

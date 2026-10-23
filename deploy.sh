@@ -8,18 +8,22 @@
 # Normally invoked by .github/workflows/deploy.yml on every push to main, but it
 # is safe to run by hand for a manual release or a rollback.
 #
-# This is a CloudPanel "Python" site: nginx reverse-proxies to gunicorn on APP_PORT,
-# and the app process is managed by supervisor (not a hand-written systemd unit).
+# This is a CloudPanel "Python" site: nginx reverse-proxies to gunicorn on APP_PORT.
+# There is no systemd unit and no supervisor program - gunicorn runs as a bare
+# process owned by the site user (PPID 1). Reloading therefore means sending
+# SIGHUP to the master, which gracefully restarts workers with the new code.
+# If the master is gone, this script starts one, since nothing else will.
 #
 #   Site user:  teachorange
 #   App dir:    /home/teachorange/htdocs/www.teachorange.com
+#   Venv:       $APP_DIR/venv
 #   App port:   8090
 #
 # Configuration (override in the environment or in .env beside this script):
 #   APP_DIR      application directory              (default: this script's directory)
-#   VENV_DIR     virtualenv to install into         (default: $APP_DIR/.venv)
-#   APP_SERVICE  supervisor program / systemd unit  (default: teachorange)
+#   VENV_DIR     virtualenv to install into         (default: $APP_DIR/venv)
 #   APP_PORT     port gunicorn listens on           (default: 8090)
+#   GUNICORN_WORKERS  worker count when starting    (default: 3)
 #   HEALTH_URL   URL that must return 200 after     (default: https://www.teachorange.com/)
 #   BACKUP_DIR   where pg_dump files are written    (default: $APP_DIR/../db-backups)
 #   SKIP_BACKUP  set to 1 to skip the pg_dump       (not recommended)
@@ -27,8 +31,8 @@
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-VENV_DIR="${VENV_DIR:-$APP_DIR/.venv}"
-APP_SERVICE="${APP_SERVICE:-teachorange}"
+VENV_DIR="${VENV_DIR:-$APP_DIR/venv}"
+GUNICORN_WORKERS="${GUNICORN_WORKERS:-3}"
 APP_PORT="${APP_PORT:-8090}"
 HEALTH_URL="${HEALTH_URL:-https://www.teachorange.com/}"
 BACKUP_DIR="${BACKUP_DIR:-$APP_DIR/../db-backups}"
@@ -57,21 +61,46 @@ rollback() {
     exit 1
 }
 
-restart_app() {
-    log "Restarting app service: $APP_SERVICE"
-    # CloudPanel Python sites are supervisor programs. Try supervisor first, then
-    # systemd, so this script keeps working if the site is ever migrated.
-    if command -v supervisorctl >/dev/null 2>&1; then
-        if sudo -n supervisorctl restart "$APP_SERVICE" 2>/dev/null; then return 0; fi
-        if supervisorctl restart "$APP_SERVICE" 2>/dev/null; then return 0; fi
-    fi
-    if sudo -n systemctl restart "$APP_SERVICE" 2>/dev/null; then return 0; fi
-    if systemctl --user restart "$APP_SERVICE" 2>/dev/null; then return 0; fi
-
-    echo "ERROR: could not restart '$APP_SERVICE'." >&2
-    echo "Check the program name with:  sudo supervisorctl status" >&2
-    echo "Then set APP_SERVICE in the environment to match." >&2
+# The gunicorn master, i.e. the one whose parent is not itself a gunicorn.
+gunicorn_master_pid() {
+    local pids p ppid
+    pids="$(pgrep -u "$(id -u)" -f 'gunicorn config.wsgi' 2>/dev/null || true)"
+    [ -z "$pids" ] && return 1
+    for p in $pids; do
+        ppid="$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')"
+        case " $pids " in
+            *" $ppid "*) ;;           # parent is another gunicorn -> this is a worker
+            *) echo "$p"; return 0 ;; # parent is not -> this is the master
+        esac
+    done
     return 1
+}
+
+start_gunicorn() {
+    log "No gunicorn master found - starting one"
+    mkdir -p "$HOME/logs"
+    nohup "$VENV_DIR/bin/gunicorn" config.wsgi:application \
+        --bind "127.0.0.1:$APP_PORT" \
+        --workers "$GUNICORN_WORKERS" \
+        --timeout 120 \
+        --access-logfile "$HOME/logs/gunicorn-access.log" \
+        --error-logfile "$HOME/logs/gunicorn-error.log" \
+        >/dev/null 2>&1 &
+    sleep 3
+}
+
+restart_app() {
+    local master
+    if master="$(gunicorn_master_pid)"; then
+        # SIGHUP: graceful reload. Workers are replaced one at a time and pick up
+        # the new code, so there is no dropped request. (Safe because gunicorn is
+        # not running with --preload.)
+        log "Reloading gunicorn master $master (SIGHUP)"
+        kill -HUP "$master"
+        sleep 3
+    else
+        start_gunicorn
+    fi
 }
 
 # Confirm gunicorn is actually back up locally before trusting the public URL,

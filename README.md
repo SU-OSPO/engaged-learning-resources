@@ -17,12 +17,19 @@ Create a Django superuser for the admin site: `python manage.py createsuperuser`
 
 Production runs on a Hostinger VPS managed by **CloudPanel** (Python site type): nginx
 terminates TLS and serves `/static/` from disk, reverse-proxying everything else to **gunicorn**
-on port **8090**. The app process is managed by **supervisor**.
+on `127.0.0.1:8090`.
+
+> **gunicorn runs as a bare process**, not under systemd or supervisor, and the site user has no
+> sudo rights over services (only `clpctlWrapper`). Deploys therefore reload it with `SIGHUP`,
+> which gracefully restarts workers on the new code. Nothing supervises the master: if it dies,
+> the site stays down until something starts it. `deploy.sh` starts one if it finds none, but
+> putting gunicorn under a real process manager would be a worthwhile follow-up.
 
 | | |
 |---|---|
 | Site user | `teachorange` |
 | App directory | `/home/teachorange/htdocs/www.teachorange.com` |
+| Virtualenv | `venv/` (not `.venv`) |
 | Python | 3.12 |
 | App port | 8090 |
 
@@ -39,7 +46,7 @@ suite to pass, then runs [`deploy.sh`](deploy.sh) on the server over SSH.
 4. **Dumps the database** to `../db-backups/` (keeps the last 10)
 5. `manage.py migrate --noinput`
 6. `manage.py collectstatic --noinput` — `staticfiles/` is gitignored and must be rebuilt every deploy
-7. Restarts gunicorn
+7. Reloads gunicorn (`SIGHUP`), starting it if no master is running
 8. Polls the site for HTTP 200; on failure, restores the previous commit and exits non-zero
 
 ### Required GitHub secrets
@@ -62,10 +69,7 @@ Settings → Secrets and variables → Actions:
 2. Confirm the repo is cloned at the app directory with a virtualenv at `.venv`.
 3. Set the production environment variables (see [`.env.example`](.env.example)). `DJANGO_DEBUG=0`
    and `DJANGO_SECRET_KEY` are **required** — the app refuses to start in production without a secret.
-4. Find the supervisor program name: `sudo supervisorctl status`. If it is not `teachorange`,
-   set `APP_SERVICE` in the server environment.
-5. Allow the site user to restart it without a password, via `visudo`:
-   `teachorange ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart teachorange`
+4. Nothing further - `deploy.sh` reloads gunicorn by signal and needs no sudo.
 
 ### Rolling back
 
@@ -84,6 +88,10 @@ a no-op), so restoring schema means restoring the dump from `../db-backups/`.
 - **Email fails quietly.** With `DJANGO_DEBUG=0` and no `DJANGO_EMAIL_HOST`/`DJANGO_EMAIL_HOST_USER`,
   the backend falls back to console and password reset plus the contact form return **HTTP 503**
   while the rest of the site looks healthy. The homepage health check will not catch this.
+  (Production `.env` currently does set these.)
+- **Server config lives in `.env`** at the app root, owned by the site user and never committed.
+  `deploy.sh` uses `git reset --hard`, which does not touch untracked files, so `.env`, `media/`
+  and `venv/` survive a deploy.
 - **`/media/` must stay behind Django.** Uploads are gated by `@login_required` in
   `config/media_serve.py`. An nginx `location /media/` alias would serve them to anonymous users.
 
