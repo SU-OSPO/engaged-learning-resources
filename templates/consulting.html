@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}TeachOrange Consultations{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #eef2f7; }
+    .consult { max-width: 1200px; margin: 0 auto; }
+    .consult-hero {
+        position: relative;
+        background:
+            radial-gradient(120% 120% at 100% 0%, rgba(247, 105, 0, 0.26) 0%, transparent 44%),
+            radial-gradient(90% 90% at 0% 100%, rgba(62, 176, 234, 0.18) 0%, transparent 48%),
+            var(--su-navy);
+        color: #fff; border-radius: var(--radius-lg);
+        padding: clamp(2rem, 5vw, 3rem); margin-bottom: 2.5rem; overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 70px -30px rgba(6, 20, 36, 0.85);
+    }
+    .consult-hero::before {
+        content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(120% 90% at 20% 10%, #000 0%, transparent 70%);
+        -webkit-mask-image: radial-gradient(120% 90% at 20% 10%, #000 0%, transparent 70%);
+    }
+    .consult-hero-inner { position: relative; z-index: 1; max-width: 1000px; }
+    .consult-eyebrow {
+        display: inline-block; font-family: var(--font-mono); font-size: 0.74rem; font-weight: 600;
+        letter-spacing: 0.18em; text-transform: uppercase; color: #ffd9b0;
+        padding: 0.4rem 0.8rem; border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px; background: rgba(255, 255, 255, 0.05); margin-bottom: 1.3rem;
+    }
+    .consult-hero h1 {
+        font-family: var(--font-display); font-size: clamp(1.9rem, 5vw, 2.8rem);
+        font-weight: 700; line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 1rem;
+    }
+    .consult-hero h1 .grad {
+        background: linear-gradient(100deg, #ff9a3d 0%, var(--su-orange-light) 40%, var(--brand-teach-mid) 100%);
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent; -webkit-text-fill-color: transparent;
+    }
+    .consult-hero p { font-size: 1.05rem; line-height: 1.7; color: rgba(255, 255, 255, 0.85); margin: 0 0 1.1rem; }
+    .consult-hero p:last-of-type { margin-bottom: 1.6rem; }
+    .consult-sections { display: grid; gap: 1.25rem; margin-bottom: 2.5rem; }
+    .consult-card {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 16px; padding: clamp(1.4rem, 3vw, 2rem); box-shadow: var(--shadow-card);
+        display: grid; gap: 1rem;
+    }
+    @media (min-width: 720px) { .consult-card { grid-template-columns: auto 1fr; gap: 1.4rem; } }
+    .consult-card h2 { font-family: var(--font-display); font-size: 1.3rem; color: var(--su-navy); margin: 0 0 0.6rem; font-weight: 700; letter-spacing: -0.01em; }
+    .consult-card p { margin: 0 0 0.85rem; font-size: 0.98rem; color: #46586b; line-height: 1.7; max-width: 75ch; }
+    .consult-card p:last-child { margin-bottom: 0; }
+    .consult-card .consult-icon {
+        width: 2.85rem; height: 2.85rem; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(145deg, rgba(255, 140, 0, 0.22), rgba(247, 105, 0, 0.1));
+        border: 1px solid rgba(247, 105, 0, 0.3); color: var(--su-orange-dark);
+    }
+    .consult-card .consult-icon svg { width: 1.4rem; height: 1.4rem; }
+    /* Audience tabs: one section visible at a time (all shown without JS) */
+    .consult-tabs {
+        display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1rem;
+        padding: 0.35rem; border-radius: 14px; width: fit-content; max-width: 100%;
+        background: rgba(13, 45, 76, 0.06); border: 1px solid rgba(13, 45, 76, 0.08);
+    }
+    .consult-tabs[hidden] { display: none; }
+    .consult-tabs button {
+        font: inherit; font-weight: 600; font-size: 0.95rem; cursor: pointer;
+        padding: 0.55rem 1.1rem; border-radius: 10px; border: 0;
+        background: transparent; color: var(--su-navy);
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+    .consult-tabs button:hover { background: rgba(247, 105, 0, 0.1); }
+    .consult-tabs button[aria-selected="true"] { background: var(--su-navy); color: #fff; box-shadow: 0 6px 16px -8px rgba(13, 45, 76, 0.6); }
+    .consult-tabs button:focus-visible { outline: 2px solid var(--su-orange); outline-offset: 2px; }
+    .consult-tabbed .consult-card[hidden] { display: none; }
+    .consult-tabbed .consult-card { animation: consult-in 0.3s var(--ease-out); }
+    @keyframes consult-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .consult-tabbed .consult-card { animation: none; } }
+    .consult-hero .hl { background: linear-gradient(transparent 62%, rgba(247, 105, 0, 0.45) 62%); color: #fff; padding: 0 0.1em; }
+    .consult-card .hl-light { background: linear-gradient(transparent 62%, rgba(247, 105, 0, 0.25) 62%); color: var(--su-navy); font-weight: 600; padding: 0 0.1em; }
+    /* Readable consult text: vertical tabs on the left, one comfortable text column on the right */
+    .consult-card { display: block; padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.4rem, 3vw, 2.5rem); }
+    .consult-card h2 { font-size: 1.45rem; margin-bottom: 1rem; }
+    .consult-card p { font-size: 1.03rem; line-height: 1.75; max-width: 80ch; margin: 0 0 1rem; color: #46586b; }
+    .consult-card p.c-lead { font-size: 1.2rem; line-height: 1.6; color: var(--su-navy); font-weight: 500; }
+    .consult-card p.c-pull {
+        margin: 1.4rem 0; padding: 0.2rem 0 0.2rem 1.15rem;
+        border-left: 3px solid var(--su-orange);
+        font-size: 1.12rem; line-height: 1.6; color: var(--su-navy); font-weight: 600;
+    }
+    .tab-icon { display: inline-flex; width: 1.6rem; height: 1.6rem; border-radius: 8px; align-items: center; justify-content: center; background: rgba(247, 105, 0, 0.12); color: var(--su-orange-dark); flex-shrink: 0; }
+    .tab-icon svg { width: 1rem; height: 1rem; }
+    .consult-tabs button { display: inline-flex; align-items: center; gap: 0.6rem; text-align: left; }
+    .consult-tabs button[aria-selected="true"] .tab-icon { background: rgba(255, 255, 255, 0.15); color: #ffd9b0; }
+    @media (min-width: 820px) {
+        .consult-browser.consult-tabbed { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 1.5rem; align-items: start; margin-bottom: 2.5rem; }
+        .consult-tabbed .consult-tabs {
+            flex-direction: column; width: auto; margin: 0;
+            position: sticky; top: calc(var(--header-h, 61px) + 1rem);
+        }
+        .consult-tabbed .consult-tabs button { width: 100%; padding: 0.75rem 0.9rem; }
+        .consult-tabbed .consult-sections { margin-bottom: 0; }
+    }
+    /* ---------- Redesigned top: hero + orbit, philosophy, building blocks ---------- */
+    .consult-hero-grid { position: relative; z-index: 1; display: grid; gap: 2rem; align-items: center; }
+    @media (min-width: 900px) { .consult-hero-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); } }
+    .consult-hero .consult-lead { font-size: 1.12rem; line-height: 1.75; max-width: 60ch; }
+    /* Services: highlighter-style underline (wraps cleanly across lines, unlike boxed pills) */
+    .consult-hero mark.svc {
+        background: linear-gradient(transparent 64%, rgba(247, 105, 0, 0.5) 64%);
+        color: #fff; font-weight: 600; padding: 0 0.08em;
+        -webkit-box-decoration-break: clone; box-decoration-break: clone;
+    }
+    .consult-orbit { position: relative; width: 320px; height: 300px; justify-self: center; }
+    @media (max-width: 899px) { .consult-orbit { width: 280px; height: 262px; } }
+    .orbit-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .orbit-lines path, .orbit-lines circle { fill: none; stroke: rgba(255, 222, 190, 0.45); stroke-width: 2; stroke-dasharray: 5 7; stroke-linecap: round; }
+    .orbit-lines circle { stroke: rgba(255, 255, 255, 0.12); stroke-dasharray: none; }
+    .orbit-mascot { position: absolute; left: 50%; top: 50%; width: 120px; height: 111px; margin: -56px 0 0 -60px; animation: orbit-bob 3.2s ease-in-out infinite; }
+    .orbit-mascot .mascot { width: 100%; height: 100%; }
+    .consult-hero .mascot .m-cap path:first-child, .consult-hero .mascot .m-limbs path { stroke: #e9f0ff; stroke-width: 1.6; paint-order: stroke; stroke-linejoin: round; }
+    .orbit-badge {
+        position: absolute; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.75rem;
+        border-radius: 14px; background: #fff; color: var(--su-navy); box-shadow: 0 16px 30px -16px rgba(0, 0, 0, 0.6);
+        font-size: 0.82rem; animation: orbit-float 4s ease-in-out infinite;
+    }
+    .orbit-badge svg { width: 1.15rem; height: 1.15rem; color: var(--su-orange-dark); }
+    .orbit-badge--1 { left: 0; top: 14%; }
+    .orbit-badge--2 { right: 0; top: 22%; animation-delay: -1.3s; }
+    .orbit-badge--3 { left: 38%; bottom: 0; animation-delay: -2.6s; }
+    @keyframes orbit-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes orbit-bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+
+    .consult-kicker {
+        display: inline-flex; align-items: center; gap: 0.5rem; margin: 0 0 1rem;
+        font-family: var(--font-mono); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--su-orange-dark);
+    }
+    .consult-kicker::before { content: ""; width: 1.4rem; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--su-orange), var(--su-orange-light)); }
+
+    .consult-philosophy {
+        display: grid; gap: 1.5rem 3rem; align-items: center; margin: 0 0 2.5rem;
+        padding: clamp(1.5rem, 4vw, 2.75rem); border-radius: 22px; background: #fff;
+        border: 1px solid rgba(13, 45, 76, 0.08); box-shadow: var(--shadow-card);
+    }
+    @media (min-width: 900px) { .consult-philosophy { grid-template-columns: 1fr 1fr; } }
+    .consult-philosophy p { margin: 0; font-size: 1.05rem; line-height: 1.75; color: #46586b; }
+    .consult-quote { position: relative; margin: 0 0 1.1rem; padding: 0.4rem 0 0 2.6rem; }
+    .consult-quote::before { content: "\201C"; position: absolute; left: 0; top: -0.6rem; font-family: var(--font-display); font-size: 4.5rem; line-height: 1; color: var(--su-orange); }
+    .consult-quote p { font-family: var(--font-display); font-size: clamp(1.45rem, 3vw, 1.95rem); line-height: 1.25; letter-spacing: -0.015em; color: var(--su-navy); font-weight: 700; }
+
+    .consult-blocks { display: grid; gap: 2rem 3rem; align-items: center; margin: 0 0 2.75rem; }
+    @media (min-width: 900px) { .consult-blocks { grid-template-columns: 1.2fr 0.8fr; } }
+    .consult-blocks-text p { margin: 0; font-size: 1.05rem; line-height: 1.75; color: #46586b; max-width: 62ch; }
+    .block-tower { display: grid; justify-items: center; gap: 0; padding: 0.5rem 0 0.75rem; }
+    .block {
+        display: inline-flex; align-items: center; gap: 0.6rem; width: 220px; height: 64px; padding: 0 1.1rem;
+        border-radius: 14px; color: #fff; font-weight: 700; box-shadow: 0 14px 26px -16px rgba(13, 45, 76, 0.7), inset 0 -5px 0 rgba(0, 0, 0, 0.12);
+        margin-top: -6px;
+        transition: opacity 0.4s ease, transform 0.55s cubic-bezier(.2,.9,.3,1.3);
+    }
+    /* Hidden only once JS is ready to drop them in, so no-JS visitors still see the tower */
+    .js-tower .block { opacity: 0; transform: translateY(-40px) rotate(-4deg); }
+    .block svg { width: 1.4rem; height: 1.4rem; }
+    .block--1 { background: linear-gradient(135deg, #1c4b78, var(--su-navy)); transition-delay: 0.05s; }
+    .block--2 { background: linear-gradient(135deg, #ff9a3d, var(--su-orange)); width: 200px; transition-delay: 0.3s; rotate: 2deg; }
+    .block--3 { background: linear-gradient(135deg, #6fc4f2, var(--brand-teach-deep)); width: 180px; transition-delay: 0.55s; rotate: -2deg; }
+    /* Blocks stack from the bottom (Lecture) up once the section scrolls into view */
+    .js-tower.in-view .block { opacity: 1; transform: none; }
+    .block-tower .block--1 { order: 3; } .block-tower .block--2 { order: 2; } .block-tower .block--3 { order: 1; }
+    .block-tower.in-view .block--1 { transition-delay: 0.05s; }
+    .block-tower.in-view .block--2 { transition-delay: 0.3s; }
+    .block-tower.in-view .block--3 { transition-delay: 0.55s; }
+
+    .consult-cta { position: relative; overflow: hidden; }
+    .cta-mascot { display: block; width: 84px; height: 78px; margin: 0 auto 0.6rem; }
+    .cta-mascot .mascot { width: 100%; height: 100%; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .orbit-badge, .orbit-mascot { animation: none; }
+        .js-tower .block { opacity: 1; transform: none; transition: none; }
+    }
+
+    .consult-cta {
+        text-align: center; padding: 2.25rem 1.5rem; border-radius: 18px;
+        background: linear-gradient(180deg, #fff5eb 0%, #ffffff 60%);
+        border: 1px solid rgba(247, 105, 0, 0.2); box-shadow: var(--shadow-card);
+    }
+    .consult-cta h2 { font-family: var(--font-display); font-size: 1.35rem; color: var(--su-navy); margin: 0 0 0.5rem; }
+    .consult-cta p { margin: 0 0 1.25rem; color: #55677a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="consult">
+    <section class="consult-hero" aria-labelledby="consult-heading">
+        <div class="consult-hero-grid">
+            <div class="consult-hero-inner">
+                <span class="consult-eyebrow">Consultations</span>
+                <h1 id="consult-heading">TeachOrange <span class="grad">Consultations</span></h1>
+                <p class="consult-lead">The TeachOrange team offers consultations on <mark class="svc">active and engaged learning strategies</mark>, <mark class="svc">syllabus design and redesign</mark>, <mark class="svc">curricular integration of engaged learning strategies</mark>, <mark class="svc">internship integration and structuring</mark>, and <mark class="svc">undergraduate outreach strategies</mark> at the college level.</p>
+                <a href="{% url 'contact' %}?type=consultation" class="btn">Request a consultation</a>
+            </div>
+            <div class="consult-orbit" aria-hidden="true">
+                <svg class="orbit-lines" viewBox="0 0 320 300"><path d="M160 150 L62 70"/><path d="M160 150 L262 92"/><path d="M160 150 L170 262"/><circle cx="160" cy="150" r="118"/></svg>
+                <span class="orbit-badge orbit-badge--1"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><b>Instructors</b></span>
+                <span class="orbit-badge orbit-badge--2"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><b>Departments</b></span>
+                <span class="orbit-badge orbit-badge--3"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg><b>Schools</b></span>
+                <span class="orbit-mascot">{% include "partials/mascot.html" %}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="consult-philosophy" aria-labelledby="philosophy-heading">
+        <div>
+            <h2 class="consult-kicker" id="philosophy-heading">Our philosophy</h2>
+            <p>We work on the philosophy that student outcomes are linked to instructors, departments, and schools employing purposeful and effective curricular strategies that develop knowledge, build skills, and foster connections between students, instructors, and schools.</p>
+        </div>
+        <div>
+            <blockquote class="consult-quote"><p>Education, job-readiness, and character are built intentionally.</p></blockquote>
+            <p>It is our goal to provide you with the plans and strategies to build your own effective structure.</p>
+        </div>
+    </section>
+
+    <section class="consult-blocks" aria-labelledby="blocks-heading">
+        <div class="consult-blocks-text">
+            <h2 class="consult-kicker" id="blocks-heading">Small moments</h2>
+            <p>We also know that no issue or idea is too small to have a transformative impact on a student. That one amazing lecture, a small experience in a class, a conversation with a professor during office hours; these are the building blocks of a transformative educational experience. Our consultations can happen at any level and are most effective when strategies and goals permeate the entire curricular structure.</p>
+        </div>
+        <div class="block-tower" aria-hidden="true">
+            <span class="block block--3"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/></svg><b>Office hours</b></span>
+            <span class="block block--2"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16"/><path d="M6 10v9M18 10v9"/><path d="M8 6h8l1 4H7z"/></svg><b>Class</b></span>
+            <span class="block block--1"><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M7 20l5-4 5 4"/><path d="M7 9h6M7 12h4"/></svg><b>Lecture</b></span>
+        </div>
+    </section>
+
+    <div class="consult-browser">
+    <div class="consult-tabs" role="tablist" aria-label="Consultations by audience" hidden>
+        <button type="button" role="tab" id="tab-instructors" aria-controls="panel-instructors" aria-selected="true"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>For Instructors</button>
+        <button type="button" role="tab" id="tab-departments" aria-controls="panel-departments" aria-selected="false" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span>For Departments</button>
+        <button type="button" role="tab" id="tab-schools" aria-controls="panel-schools" aria-selected="false" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg></span>For Schools and Colleges</button>
+    </div>
+    <div class="consult-sections">
+        <section class="consult-card" id="panel-instructors" data-tab="tab-instructors" aria-labelledby="consult-instructors">
+            <h2 id="consult-instructors">For Instructors</h2>
+            <p class="c-lead">Transformative educational experiences are grounded in the classroom. It is where instructors plant the seeds that will bear fruit outside the classroom and beyond the student’s college experience.</p>
+            <p class="c-pull">What happens in the classroom should never stay in the classroom and what happens outside the classroom should be a direct outcome of what happens in the classroom.</p>
+            <p>We offer consultations on <mark class="hl-light">syllabus design for new courses, redesign for existing courses, assignment and activity review, and course design for internship experiences</mark>.</p>
+            <p>In addition, we also work with instructors to enhance their own experience in the classroom and better utilize their own time to have maximum impact. <mark class="hl-light">If the instructor is not enjoying teaching, how can the students possibly enjoy learning.</mark> Our strategies help instructors <mark class="hl-light">foster, grow, or reignite their own love of teaching</mark> and connections with students.</p>
+        </section>
+        <section class="consult-card" id="panel-departments" data-tab="tab-departments" aria-labelledby="consult-departments">
+            <h2 id="consult-departments">For Departments</h2>
+            <p class="c-lead">The path students take to a particular major or course of study begins before they step foot on campus and extends well beyond their time in college.</p>
+            <p>Engaged learning strategies in courses <mark class="hl-light">help encode material in a student’s knowledge and skill base</mark>, which allows them to more effectively use that base in and out of the classroom.</p>
+            <p class="c-pull">But the benefits of engaged learning strategies compound when they are integrated into a logical and impactful course of study. In other words, a designed curriculum.</p>
+            <p><mark class="hl-light">The degree curriculum is one of the most powerful tools we have to enhance student outcomes</mark>, increase recruitment and retention, and reconnect students to their educational experience after they graduate.</p>
+            <p>If your department is looking to refocus its curriculum on student knowledge growth, skill acquisition, and overall satisfaction, we can work with you to <mark class="hl-light">adapt existing courses, plan new courses, and analyze degree requirements</mark>.</p>
+        </section>
+        <section class="consult-card" id="panel-schools" data-tab="tab-schools" aria-labelledby="consult-schools">
+            <h2 id="consult-schools">For Schools and Colleges</h2>
+            <p class="c-lead">Large institutional units often lose sight of the micro foundations of the student experience that lead to desired outcomes like recruitment, retention, and reengagement.</p>
+            <p>Seeing students only as customers, or as experts in their own educational experience, can lead to a de-prioritization of the curriculum and instruction as the core of the educational experience. This can be damaging as <mark class="hl-light">students extract value from their college experience primarily in the classroom</mark>.</p>
+            <p class="c-pull">When looking back and asking themselves, “was this worth it?” students are thinking about their classroom experience.</p>
+            <p>Our framework and strategies turn these detrimental patterns on their head by <mark class="hl-light">placing the student-teacher relationship that begins in the classroom at the core</mark>. Schools and colleges can accomplish this by designing a curriculum that builds toward transformative experiences in amazing classes, impactful internships, and connected relationships.</p>
+            <p>By reestablishing their leadership over the educational experience through the implementation of designed curricula, colleges and universities can <mark class="hl-light">increase student engagement and reengagement, decrease administrative burdens, and foster productive campus environments</mark>.</p>
+            <p><mark class="hl-light">Let the curriculum do the work for you.</mark></p>
+        </section>
+    </div>
+    </div>
+
+    <section class="consult-cta">
+        <span class="cta-mascot" aria-hidden="true">{% include "partials/mascot.html" %}</span>
+        <h2>Interested in a consultation?</h2>
+        <p>Reach out to the TeachOrange team to start a conversation.</p>
+        <a href="{% url 'contact' %}?type=consultation" class="btn">Contact us</a>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Stack the "Small moments" blocks when they scroll into view.
+    (function () {
+        var tower = document.querySelector('.block-tower');
+        if (!tower || !('IntersectionObserver' in window)) return;
+        tower.classList.add('js-tower');
+        var io = new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) { tower.classList.add('in-view'); io.disconnect(); }
+        }, { threshold: 0.35 });
+        io.observe(tower);
+    })();
+</script>
+
+<script>
+    (function() {
+        var tablist = document.querySelector('.consult-tabs');
+        var wrap = document.querySelector('.consult-sections');
+        if (!tablist || !wrap) return;
+        var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[role="tab"]'));
+        var panels = Array.prototype.slice.call(wrap.querySelectorAll('.consult-card'));
+        tablist.hidden = false;
+        wrap.parentElement.classList.add('consult-tabbed');
+        panels.forEach(function(p) { p.setAttribute('role', 'tabpanel'); });
+        function select(tab, focus) {
+            tabs.forEach(function(t) {
+                var on = t === tab;
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+                t.tabIndex = on ? 0 : -1;
+                document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+            });
+            if (focus) tab.focus();
+        }
+        tabs.forEach(function(tab, i) {
+            tab.addEventListener('click', function() { select(tab, false); });
+            tab.addEventListener('keydown', function(e) {
+                var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : null;
+                if (next === null) return;
+                e.preventDefault();
+                select(tabs[(next + tabs.length) % tabs.length], true);
+            });
+        });
+        select(tabs[0], false);
+    })();
+</script>
+{% endblock %}

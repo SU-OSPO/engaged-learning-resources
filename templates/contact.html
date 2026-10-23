@@ -5,196 +5,118 @@
 
 {% block extra_css %}
 <style>
-    .contact-page {
-        max-width: 920px;
-        margin: 0 auto;
-    }
-    .contact-intro {
-        margin: 0 0 2rem;
-        color: #444;
-        line-height: 1.65;
-        font-size: 1.02rem;
-    }
-    .contact-intro a {
-        color: var(--su-navy);
-        font-weight: 600;
-    }
-    .contact-intro a:hover {
-        color: var(--su-orange-dark);
-    }
+    body { background: #eef2f7; }
+    .contact-page { max-width: 1200px; margin: 0 auto; }
+    .contact-intro { margin: 0 0 2rem; color: #46586b; line-height: 1.7; font-size: 1.05rem; max-width: 74ch; }
+    .contact-intro a { color: var(--su-navy); font-weight: 600; }
+    .contact-intro a:hover { color: var(--su-orange-dark); }
     .section-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--su-orange-dark);
-        margin: 0 0 0.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--su-orange-dark); margin: 0 0 0.6rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .section-label::before {
+        content: ""; width: 1.35rem; height: 2px; border-radius: 2px;
+        background: linear-gradient(90deg, var(--su-orange), var(--su-orange-light));
     }
     .section-title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--su-navy);
-        margin: 0 0 1.25rem;
+        font-family: var(--font-display);
+        font-size: 1.35rem; font-weight: 700; color: var(--su-navy); margin: 0 0 1.25rem; letter-spacing: -0.01em;
     }
-    /* Photos: add files to static/team/ (see filenames in template). */
-    .person-photo {
-        position: relative;
-        flex-shrink: 0;
-        width: 112px;
-        height: 112px;
-        border-radius: 50%;
+
+    /* Two-column split: team left, form right */
+    .contact-split { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 2rem; align-items: start; }
+    @media (min-width: 861px) { .contact-team-col { position: sticky; top: calc(var(--header-h, 61px) + 1.25rem); } }
+    @media (max-width: 860px) { .contact-split { grid-template-columns: 1fr; gap: 2.5rem; } }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 18px; padding: 1.6rem 1.7rem; box-shadow: var(--shadow-card);
+    }
+    .contact-form-col .panel { border-top: 3px solid var(--su-orange); }
+
+    .avatar {
+        flex-shrink: 0; width: 84px; height: 84px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: #fff;
+        border: 3px solid rgba(255, 255, 255, 0.75);
+        box-shadow: 0 8px 22px -10px rgba(13, 45, 76, 0.55);
         overflow: hidden;
-        background: linear-gradient(145deg, #e8eef4 0%, #d4dde8 100%);
-        border: 3px solid rgba(247, 105, 0, 0.35);
-        box-shadow: 0 6px 20px rgba(13, 45, 76, 0.12);
     }
-    .person-photo--lead {
-        width: 140px;
-        height: 140px;
-        border-width: 4px;
+    .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; background: #fff; }
+    .avatar-sm { width: 52px; height: 52px; font-size: 1.05rem; }
+    .avatar--orange { background: linear-gradient(145deg, #FF9E2C 0%, var(--su-orange) 55%, var(--su-orange-dark) 100%); }
+    .avatar--sky { background: linear-gradient(145deg, #6fc4f2 0%, var(--brand-teach-mid) 55%, var(--brand-teach-deep) 100%); }
+    .avatar--navy { background: linear-gradient(145deg, #1c4b78 0%, var(--su-navy) 60%, var(--su-navy-900) 100%); }
+
+    .tm-lead { display: flex; gap: 1.1rem; align-items: flex-start; padding-bottom: 1.25rem; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(13, 45, 76, 0.1); }
+    .tm-lead h3 { font-family: var(--font-display); font-size: 1.2rem; color: var(--su-navy); margin: 0 0 0.25rem; }
+    .tm-role { margin: 0; font-size: 0.88rem; font-weight: 600; color: var(--su-gray-dark); line-height: 1.5; }
+    .tm-contact { margin: 0.85rem 0 0; display: grid; gap: 0.5rem; }
+    .tm-contact div { display: flex; gap: 0.6rem; align-items: baseline; }
+    .tm-contact dt { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: #7a8a9a; min-width: 3.4rem; margin: 0; }
+    .tm-contact dd { margin: 0; font-size: 0.92rem; color: var(--ink); }
+    .tm-contact a { color: var(--su-navy); font-weight: 600; text-decoration: underline; text-decoration-color: rgba(247, 105, 0, 0.5); text-underline-offset: 2px; }
+    .tm-contact a:hover { color: var(--su-orange-dark); }
+
+    .tm-row { display: flex; gap: 0.85rem; align-items: center; padding: 0.85rem 0; border-bottom: 1px solid rgba(13, 45, 76, 0.08); }
+    .tm-row:last-child { border-bottom: none; }
+    .tm-name { font-family: var(--font-display); font-weight: 700; color: var(--su-navy); margin: 0; font-size: 1rem; }
+    .tm-row .tm-role { font-size: 0.83rem; }
+    .team-more { margin: 1.1rem 0 0; }
+    .team-more a { color: var(--su-orange-dark); font-weight: 600; text-decoration: none; }
+    .team-more a:hover { text-decoration: underline; }
+
+    /* Contact form */
+    .cf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.25rem; }
+    @media (max-width: 560px) { .cf-grid { grid-template-columns: 1fr; } }
+    .cf-field { margin-bottom: 1rem; display: flex; flex-direction: column; }
+    .cf-field label { font-weight: 600; font-size: 0.88rem; color: var(--su-navy); margin-bottom: 0.35rem; }
+    .contact-form input, .contact-form textarea {
+        width: 100%; padding: 0.65rem 0.8rem;
+        border: 1.5px solid rgba(13, 45, 76, 0.16); border-radius: 10px;
+        font-size: 1rem; font-family: inherit; background: #fff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .person-photo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
+    .contact-form input:focus, .contact-form textarea:focus {
+        outline: none; border-color: var(--su-orange); box-shadow: 0 0 0 3px rgba(247, 105, 0, 0.18);
     }
-    .person-photo img.is-hidden {
-        display: none;
+    .contact-form textarea { resize: vertical; min-height: 130px; }
+    .contact-form .btn { width: 100%; }
+    .cf-error { color: #b00020; font-size: 0.85rem; margin: 0.35rem 0 0; }
+    .cf-req { color: var(--su-orange-dark); font-weight: 700; }
+    .cf-opt { font-weight: 500; color: #7a8a9a; font-size: 0.8rem; }
+    .cf-hint { margin: -0.15rem 0 0.4rem; font-size: 0.8rem; color: #6b7c8d; }
+    .cf-note { margin: 0.25rem 0 1rem; font-size: 0.8rem; color: #6b7c8d; }
+    .cf-hint-after { margin: 0.35rem 0 0; }
+    .contact-form input[readonly] { background: #f3f6f9; color: #46586b; cursor: not-allowed; }
+    .cf-form-error { margin: 0 0 1rem; padding: 0.6rem 0.8rem; background: #fdecee; border-radius: 8px; }
+    .contact-form select {
+        width: 100%; padding: 0.65rem 2.4rem 0.65rem 0.8rem;
+        border: 1.5px solid rgba(13, 45, 76, 0.16); border-radius: 10px;
+        font-size: 1rem; font-family: inherit; color: var(--ink); cursor: pointer;
+        appearance: none; -webkit-appearance: none;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230D2D4C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.75rem center / 1.1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .person-photo-fallback {
-        position: absolute;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.65rem;
-        font-weight: 700;
-        color: var(--su-navy);
-        letter-spacing: 0.02em;
-        user-select: none;
-    }
-    .person-photo--lead .person-photo-fallback {
-        font-size: 2rem;
-    }
-    .person-photo.has-fallback .person-photo-fallback {
-        display: flex;
-    }
-    .lead-card {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        align-items: center;
-        text-align: center;
-        background: linear-gradient(165deg, #ffffff 0%, #fafcfe 100%);
-        border: 1px solid rgba(13, 45, 76, 0.12);
-        border-radius: 16px;
-        padding: 1.75rem 1.5rem 1.5rem;
-        margin-bottom: 2.5rem;
-        box-shadow: 0 8px 32px rgba(13, 45, 76, 0.08);
-        border-top: 4px solid var(--su-orange);
-    }
-    @media (min-width: 640px) {
-        .lead-card {
-            flex-direction: row;
-            align-items: flex-start;
-            text-align: left;
-            padding: 1.75rem 2rem;
-        }
-    }
-    .lead-body {
-        flex: 1;
-        min-width: 0;
-    }
-    .lead-card h2 {
-        margin: 0 0 0.35rem;
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: var(--su-navy);
-        line-height: 1.2;
-    }
-    .lead-card .role {
-        margin: 0 0 1rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--su-gray-dark);
-        line-height: 1.45;
-    }
-    .lead-card dl {
-        margin: 0;
-        font-size: 0.92rem;
-        line-height: 1.5;
-    }
-    .lead-card dt {
-        margin: 0.6rem 0 0.12rem;
-        font-weight: 700;
-        font-size: 0.72rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: #666;
-    }
-    .lead-card dt:first-of-type {
-        margin-top: 0;
-    }
-    .lead-card dd {
-        margin: 0;
-        color: #333;
-    }
-    .lead-card a {
-        color: var(--su-navy);
-        font-weight: 600;
-        text-decoration: underline;
-        text-decoration-color: rgba(247, 105, 0, 0.45);
-        text-underline-offset: 2px;
-    }
-    .lead-card a:hover {
-        color: var(--su-orange-dark);
-    }
-    .team-grid {
-        display: grid;
-        gap: 1.25rem;
-    }
-    @media (min-width: 700px) {
-        .team-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-    .team-card {
-        background: linear-gradient(165deg, #ffffff 0%, #fafcfe 100%);
-        border: 1px solid rgba(13, 45, 76, 0.12);
-        border-radius: 14px;
-        padding: 1.35rem 1.15rem 1.25rem;
-        box-shadow: 0 6px 24px rgba(13, 45, 76, 0.07);
-        border-top: 3px solid var(--brand-teach-mid);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    .team-card h3 {
-        margin: 0.85rem 0 0.35rem;
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: var(--su-navy);
-        line-height: 1.25;
-    }
-    .team-card .role {
-        margin: 0;
-        font-size: 0.88rem;
-        font-weight: 600;
-        color: var(--su-gray-dark);
-        line-height: 1.45;
-    }
+    .contact-form select:focus { outline: none; border-color: var(--su-orange); box-shadow: 0 0 0 3px rgba(247, 105, 0, 0.18); }
+    .contact-form select:invalid, .contact-form select option[value=""] { color: #7a8a9a; }
+    .contact-form select option { color: var(--ink); }
+    .cf-field.has-error input, .cf-field.has-error textarea, .cf-field.has-error select { border-color: #b00020; }
+    .cf-submit { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .cf-submit svg { width: 1.05rem; height: 1.05rem; }
+    .cf-submit[disabled] { opacity: 0.7; cursor: progress; }
+
     .contact-footnote {
-        margin: 2rem 0 0;
-        padding: 1rem 1.15rem;
+        margin: 1.25rem 0 0; padding: 1rem 1.15rem;
         background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border: 1px solid rgba(59, 130, 246, 0.25);
-        border-radius: 10px;
-        font-size: 0.95rem;
-        color: #1e3a5f;
-        line-height: 1.55;
+        border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px;
+        font-size: 0.9rem; color: #1e3a5f; line-height: 1.6;
     }
+    .contact-footnote a { color: #0d4a8c; font-weight: 600; }
 </style>
 {% endblock %}
 
@@ -202,61 +124,123 @@
 <div class="contact-page">
     <h1 class="page-title">Contact us</h1>
     <p class="contact-intro">
-        Questions about <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span>, contributing activities, or faculty access?
-        Contact <strong>Mark D. Brockway</strong> (lead). <strong>Benjamin Katz</strong> and <strong>Sadie Rose Lehrfeld</strong> gathered the teaching resources; <strong>Abhijnya Konanduru Gurumurthy</strong> built this website.
+        Questions about <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span>, contributing activities, instructor access, or a <a href="{% url 'consulting' %}">consultation</a>?
+        Reach out to the team on the left, or send us a message directly.
     </p>
 
-    <p class="section-label">Faculty lead</p>
-    <section class="lead-card" aria-labelledby="lead-name">
-        <figure class="person-photo person-photo--lead" id="photo-mark">
-            <img src="{% static 'team/mark-brockway.jpg' %}" alt="Mark D. Brockway" width="140" height="140" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
-            <span class="person-photo-fallback" aria-hidden="true">MB</span>
-        </figure>
-        <div class="lead-body">
-            <h2 id="lead-name">Mark D. Brockway</h2>
-            <p class="role">Assistant Teaching Professor, Political Science · Maxwell School of Citizenship and Public Affairs, Syracuse University</p>
-            <dl>
-                <dt>Email</dt>
-                <dd><a href="mailto:mdbrockw@syr.edu">mdbrockw@syr.edu</a></dd>
-                <dt>Phone</dt>
-                <dd><a href="tel:+13154432416">315.443.2416</a></dd>
-                <dt>Office</dt>
-                <dd>100 Eggers Hall, Syracuse, NY 13244</dd>
-            </dl>
-        </div>
-    </section>
+    <div class="contact-split">
+        <!-- Left: meet the team -->
+        <section class="contact-team-col" aria-labelledby="team-heading">
+            <p class="section-label">Meet the team</p>
+            <h2 id="team-heading" class="section-title">The people behind TeachOrange</h2>
+            <div class="panel">
+                <div class="tm-lead">
+                    <div class="avatar avatar--orange"><img src="{% static 'team/mark-brockway.jpg' %}" alt="Mark Brockway"></div>
+                    <div>
+                        <h3>Mark Brockway</h3>
+                        <p class="tm-role">Assistant Teaching Professor, Political Science · Maxwell School, Syracuse University</p>
+                        <dl class="tm-contact">
+                            <div><dt>Website</dt><dd><a href="https://markbrockway.com" target="_blank" rel="noopener">markbrockway.com</a></dd></div>
+                            <div><dt>Phone</dt><dd><a href="tel:+13154432416">315.443.2416</a></dd></div>
+                            <div><dt>Office</dt><dd>100 Eggers Hall, Syracuse, NY 13244</dd></div>
+                        </dl>
+                    </div>
+                </div>
+                <div class="tm-row">
+                    <div class="avatar avatar-sm avatar--navy"><img src="{% static 'team/namratha-tiptur-manjunath.jpg' %}" alt="Namratha Tiptur Manjunath"></div>
+                    <div><p class="tm-name">Namratha Tiptur Manjunath</p><p class="tm-role">Website &amp; platform development · Syracuse University</p></div>
+                </div>
+                <p class="team-more"><a href="{% url 'team' %}">Full team page &rarr;</a></p>
+            </div>
+            <p class="contact-footnote">
+                <strong>Instructor accounts</strong> use a verified <strong>.edu</strong> email. If you need help with registration, password reset, or materials access, send us a message using the contact form and include your university address.
+            </p>
+        </section>
 
-    <p class="section-label">Student team</p>
-    <h2 class="section-title">Resources &amp; website</h2>
-    <div class="team-grid">
-        <article class="team-card" aria-labelledby="name-benjamin">
-            <figure class="person-photo" id="photo-benjamin">
-                <img src="{% static 'team/benjamin-katz.jpg' %}" alt="Benjamin Katz" width="112" height="112" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
-                <span class="person-photo-fallback" aria-hidden="true">BK</span>
-            </figure>
-            <h3 id="name-benjamin">Benjamin Katz</h3>
-            <p class="role">Collected teaching resources · Syracuse University</p>
-        </article>
-        <article class="team-card" aria-labelledby="name-sadie">
-            <figure class="person-photo" id="photo-sadie">
-                <img src="{% static 'team/sadie-lehrfeld.jpg' %}" alt="Sadie Rose Lehrfeld" width="112" height="112" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
-                <span class="person-photo-fallback" aria-hidden="true">SL</span>
-            </figure>
-            <h3 id="name-sadie">Sadie Rose Lehrfeld</h3>
-            <p class="role">Collected teaching resources · Syracuse University</p>
-        </article>
-        <article class="team-card" aria-labelledby="name-abhijnya">
-            <figure class="person-photo" id="photo-abhijnya">
-                <img src="{% static 'team/abhijnya-konanduru-gurumurthy.jpg' %}" alt="Abhijnya Konanduru Gurumurthy" width="112" height="112" loading="lazy" onerror="this.classList.add('is-hidden'); this.parentElement.classList.add('has-fallback');">
-                <span class="person-photo-fallback" aria-hidden="true">AK</span>
-            </figure>
-            <h3 id="name-abhijnya">Abhijnya Konanduru Gurumurthy</h3>
-            <p class="role">Website &amp; platform development · Syracuse University</p>
-        </article>
+        <!-- Right: contact form -->
+        <section class="contact-form-col" aria-labelledby="contact-form-title">
+            <p class="section-label">Send a message</p>
+            <h2 id="contact-form-title" class="section-title">Get in touch</h2>
+            <div class="panel">
+                <form method="post" action="{% url 'contact' %}" class="contact-form" id="contact-form" novalidate>
+                    {% csrf_token %}
+                    <div style="position:absolute; left:-9999px;" aria-hidden="true">
+                        <label for="{{ form.website.id_for_label }}">Leave this field empty</label>
+                        {{ form.website }}
+                    </div>
+                    {% if form.non_field_errors %}<p class="cf-error cf-form-error" role="alert">{{ form.non_field_errors|striptags }}</p>{% endif %}
+                    <div class="cf-field{% if form.request_type.errors %} has-error{% endif %}">
+                        <label for="{{ form.request_type.id_for_label }}">Type of request <span class="cf-req" aria-hidden="true">*</span></label>
+                        <p class="cf-hint" id="request_type-hint">Helps us route your message to the right person.</p>
+                        {{ form.request_type }}
+                        {% if form.request_type.errors %}<p class="cf-error" id="request_type-error" role="alert">{{ form.request_type.errors|striptags }}</p>{% endif %}
+                    </div>
+                    <div class="cf-grid">
+                    <div class="cf-field{% if form.name.errors %} has-error{% endif %}">
+                        <label for="{{ form.name.id_for_label }}">Name <span class="cf-req" aria-hidden="true">*</span></label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="cf-error" id="name-error" role="alert">{{ form.name.errors|striptags }}</p>{% endif %}
+                    </div>
+                    <div class="cf-field{% if form.email.errors %} has-error{% endif %}">
+                        <label for="{{ form.email.id_for_label }}">Email <span class="cf-req" aria-hidden="true">*</span></label>
+                        {{ form.email }}
+                        {% if email_from_account %}<p class="cf-hint cf-hint-after">From your account</p>{% endif %}
+                        {% if form.email.errors %}<p class="cf-error" id="email-error" role="alert">{{ form.email.errors|striptags }}</p>{% endif %}
+                    </div>
+                    </div>
+                    <div class="cf-grid">
+                    <div class="cf-field{% if form.institution.errors %} has-error{% endif %}">
+                        <label for="{{ form.institution.id_for_label }}">Institution <span class="cf-opt">(optional)</span></label>
+                        {{ form.institution }}
+                        {% if form.institution.errors %}<p class="cf-error" id="institution-error" role="alert">{{ form.institution.errors|striptags }}</p>{% endif %}
+                    </div>
+                    <div class="cf-field{% if form.subject.errors %} has-error{% endif %}">
+                        <label for="{{ form.subject.id_for_label }}">Subject <span class="cf-req" aria-hidden="true">*</span></label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}<p class="cf-error" id="subject-error" role="alert">{{ form.subject.errors|striptags }}</p>{% endif %}
+                    </div>
+                    </div>
+                    <div class="cf-field{% if form.message.errors %} has-error{% endif %}">
+                        <label for="{{ form.message.id_for_label }}">Message <span class="cf-req" aria-hidden="true">*</span></label>
+                        {{ form.message }}
+                        {% if form.message.errors %}<p class="cf-error" id="message-error" role="alert">{{ form.message.errors|striptags }}</p>{% endif %}
+                    </div>
+                    <p class="cf-note"><span class="cf-req" aria-hidden="true">*</span> Required. We reply to the email you enter.</p>
+                    <button type="submit" class="btn cf-submit">
+                        <span class="cf-submit-label">Send message</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                    </button>
+                </form>
+            </div>
+        </section>
     </div>
 
-    <p class="contact-footnote">
-        <strong>Faculty accounts</strong> use a verified <strong>.edu</strong> email. If you need help with registration, password reset, or materials access, email <a href="mailto:mdbrockw@syr.edu">mdbrockw@syr.edu</a> and include your university address.
-    </p>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        var form = document.getElementById('contact-form');
+        if (!form) return;
+        // Tie each error message to its field for screen readers.
+        form.querySelectorAll('.cf-field.has-error').forEach(function(field) {
+            var input = field.querySelector('input, select, textarea');
+            var error = field.querySelector('.cf-error');
+            if (input && error) {
+                input.setAttribute('aria-invalid', 'true');
+                var described = input.getAttribute('aria-describedby');
+                input.setAttribute('aria-describedby', described ? described + ' ' + error.id : error.id);
+            }
+        });
+        var first = form.querySelector('[aria-invalid="true"]');
+        if (first) first.focus();
+        // Prevent double submits.
+        form.addEventListener('submit', function() {
+            var btn = form.querySelector('.cf-submit');
+            btn.disabled = true;
+            btn.querySelector('.cf-submit-label').textContent = 'Sending…';
+        });
+    })();
+</script>
 {% endblock %}

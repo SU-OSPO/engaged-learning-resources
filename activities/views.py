@@ -1,19 +1,28 @@
+import logging
 import mimetypes
 import os
+import re
 from urllib.parse import quote, urlencode
 
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.core.mail import EmailMessage
+from django.db.models import Count, Q
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 
+from config.email_status import email_delivery_available
 from config.error_handlers import json_error_response
-from .models import Activity, Category, Material, Tag
+from .forms import ContactForm
+from .models import Activity, ActivityTag, Category, Material, Tag
 from .tile_images import tile_image_url
 
+
+logger = logging.getLogger(__name__)
 
 SORT_FIELDS = {"title", "-title", "created_at", "-created_at"}
 
@@ -114,6 +123,10 @@ def _material_dict(m, request):
         "preview_kind": kind,
         "show_preview_button": show_preview_button,
         "has_preview_pdf": bool(m.preview_pdf),
+        # File extension of the main file (or preview PDF), for the file-type tile on the detail page
+        "file_ext": os.path.splitext((m.file or m.preview_pdf).name)[1].lstrip(".").lower()
+        if (m.file or m.preview_pdf)
+        else "",
     }
     # Office Online cannot fetch login-protected URLs (no session cookie). PDF preview is preferred.
     if kind == "office" and file_open_url:
@@ -184,17 +197,108 @@ def material_download(request, material_id):
 @require_GET
 def home(request):
     """Landing page describing the teaching activities platform."""
-    return render(request, "home.html")
+    recent = (
+        Activity.objects.select_related("category").prefetch_related("tags").order_by("-created_at")[:3]
+    )
+    recent_activities = [{"activity": a, "tile_image": tile_image_url(a)} for a in recent]
+    return render(request, "home.html", {"recent_activities": recent_activities})
+
+
+@require_http_methods(["GET", "POST"])
+def contact(request):
+    """Contact page with a message form that emails CONTACT_EMAIL."""
+    user = request.user if request.user.is_authenticated else None
+    status = 200
+    if request.method == "POST":
+        data = request.POST.copy()
+        if user and user.email:
+            # Signed-in users always send from their verified account email.
+            data["email"] = user.email
+        form = ContactForm(data)
+        if form.is_valid():
+            if form.is_spam():
+                # Silently accept honeypot hits without sending.
+                messages.success(request, "Thanks — your message has been sent.")
+                return redirect("contact")
+            data = form.cleaned_data
+            request_type = form.request_type_label()
+            subject = data["subject"]
+            body = (
+                f"Request type: {request_type}\n"
+                f"Name: {data['name']}\n"
+                f"Email: {data['email']}\n"
+                f"Institution: {data.get('institution') or '-'}\n\n"
+                f"{data['message']}"
+            )
+            recipient = getattr(settings, "CONTACT_EMAIL", settings.DEFAULT_FROM_EMAIL)
+            email = EmailMessage(
+                subject=f"[TeachOrange · {request_type}] {subject}",
+                body=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[recipient],
+                reply_to=[data["email"]],
+            )
+            try:
+                if not email_delivery_available():
+                    raise RuntimeError("No email backend configured (console backend with DEBUG off)")
+                email.send(fail_silently=False)
+            except Exception:
+                # Keep the visitor's message on screen; 503 = the mail service, not the page, is unavailable.
+                logger.exception("Contact form email to %s could not be sent", recipient)
+                status = 503
+                messages.error(
+                    request,
+                    "Sorry — we couldn't send your message right now, so nothing was sent. "
+                    "Please try again in a few minutes.",
+                )
+            else:
+                messages.success(
+                    request, "Thanks — your message has been sent. We'll be in touch."
+                )
+                return redirect("contact")
+    else:
+        # Links like /contact/?type=consultation pre-select the request type.
+        initial = {}
+        initial_type = request.GET.get("type", "")
+        if initial_type in dict(ContactForm.REQUEST_TYPES):
+            initial["request_type"] = initial_type
+        if user:
+            # Pre-fill from the account profile.
+            initial["email"] = user.email
+            initial["name"] = user.get_full_name()
+        form = ContactForm(initial=initial)
+    if user and user.email:
+        form.fields["email"].widget.attrs["readonly"] = True
+    return render(
+        request, "contact.html", {"form": form, "email_from_account": bool(user and user.email)}, status=status
+    )
 
 
 @require_GET
-def contact(request):
-    """Contact and team page."""
-    return render(request, "contact.html")
+def team(request):
+    """Meet the team page."""
+    return render(request, "team.html")
 
 
-def _get_filtered_queryset(request):
-    """Build filtered activity queryset from request params."""
+@require_GET
+def consulting(request):
+    """TeachOrange Consultations page."""
+    return render(request, "consulting.html")
+
+
+def _selected(request, key):
+    """Non-empty, de-duplicated values of a repeatable query param (e.g. ?tag=a&tag=b)."""
+    seen, out = set(), []
+    for value in request.GET.getlist(key):
+        value = value.strip()
+        if value and value.lower() not in seen:
+            seen.add(value.lower())
+            out.append(value)
+    return out
+
+
+def _get_filtered_queryset(request, ignore=()):
+    """Build filtered activity queryset from request params (skip any names in `ignore`)."""
     qs = Activity.objects.select_related("category").prefetch_related("tags", "materials")
 
     q = request.GET.get("q", "").strip()
@@ -205,16 +309,21 @@ def _get_filtered_queryset(request):
             | Q(tags__name__icontains=q)
         ).distinct()
 
-    tag_name = request.GET.get("tag", "").strip()
-    if tag_name:
-        qs = qs.filter(tags__name__iexact=tag_name)
+    # Several ?tag= / ?category= values match activities with ANY of them.
+    tag_names = [] if "tag" in ignore else _selected(request, "tag")
+    if tag_names:
+        tag_q = Q()
+        for name in tag_names:
+            tag_q |= Q(tags__name__iexact=name)
+        qs = qs.filter(tag_q).distinct()
 
-    category_id = request.GET.get("category", "").strip()
-    if category_id:
+    if "category" not in ignore:
         try:
-            qs = qs.filter(category_id=int(category_id))
+            category_ids = [int(c) for c in _selected(request, "category")]
         except ValueError:
             return None, "Invalid category id."
+        if category_ids:
+            qs = qs.filter(category_id__in=category_ids)
 
     sort = request.GET.get("sort", "-created_at").strip()
     if sort in SORT_FIELDS:
@@ -223,6 +332,90 @@ def _get_filtered_queryset(request):
         qs = qs.order_by("-created_at")
 
     return qs, None
+
+
+# Seed/admin descriptions often end with a "Time: 90 Minutes" line; the list shows it as a badge.
+_DURATION_RE = re.compile(r"(?:^|\n)[ \t]*Time:[ \t]*(?P<duration>[^\n]+?)[ \t]*$", re.IGNORECASE)
+
+
+def _split_duration(description):
+    """Return (description without a trailing "Time: ..." line, duration text or "")."""
+    m = _DURATION_RE.search(description or "")
+    if not m:
+        return description or "", ""
+    return description[: m.start()].rstrip(), m.group("duration").strip()
+
+
+def _query_without(request, *drop, **set_values):
+    """Current query string minus `drop` keys (and page), with `set_values` applied."""
+    params = request.GET.copy()
+    params.pop("page", None)
+    for key in drop:
+        params.pop(key, None)
+    for key, value in set_values.items():
+        params[key] = value
+    query = params.urlencode()
+    return f"{reverse('activities:list')}?{query}" if query else reverse("activities:list")
+
+
+def _query_toggle(request, key, value, *, on):
+    """Current list URL with one value of a repeatable param added (on=True) or removed."""
+    params = request.GET.copy()
+    params.pop("page", None)
+    values = [v for v in params.getlist(key) if v.strip() and v.strip().lower() != str(value).lower()]
+    if on:
+        values.append(str(value))
+    params.setlist(key, values)
+    query = params.urlencode()
+    return f"{reverse('activities:list')}?{query}" if query else reverse("activities:list")
+
+
+def _browse_facets(request):
+    """Sidebar counts: categories (respecting search + tag) and tags (respecting search + category)."""
+    cat_qs, _ = _get_filtered_queryset(request, ignore=("category",))
+    cat_ids = cat_qs.order_by().values("id")
+    counts = dict(
+        Activity.objects.filter(id__in=cat_ids).order_by().values_list("category_id").annotate(n=Count("id"))
+    )
+    active_cats = set(_selected(request, "category"))
+    categories = [
+        {"id": c.id, "name": c.name, "count": counts.get(c.id, 0), "active": str(c.id) in active_cats}
+        for c in Category.objects.order_by("name")
+        if counts.get(c.id) or str(c.id) in active_cats
+    ]
+    tag_qs, _ = _get_filtered_queryset(request, ignore=("tag",))
+    tag_counts = dict(
+        ActivityTag.objects.filter(activity_id__in=tag_qs.order_by().values("id"))
+        .order_by()
+        .values_list("tag_id")
+        .annotate(n=Count("activity_id", distinct=True))
+    )
+    active_tags = {t.lower() for t in _selected(request, "tag")}
+    tags = [
+        {"name": t.name, "display_name": t.display_name, "count": tag_counts.get(t.id, 0), "active": t.name.lower() in active_tags}
+        for t in Tag.objects.order_by("name")
+        if tag_counts.get(t.id) or t.name.lower() in active_tags
+    ]
+    return {
+        "category_facets": categories,
+        "category_selected": [c for c in categories if c["active"]],
+        "tag_facets": tags,
+        "tag_selected": [t for t in tags if t["active"]],
+    }
+
+
+def _first_previewable(activity, request):
+    """First material that can render inline (PDF/image) — used by the list popout."""
+    for m in activity.materials.all():
+        kind = _preview_kind_for_material(m)
+        if kind in ("pdf", "image") and (m.preview_pdf or m.file):
+            return {
+                "open_url": request.build_absolute_uri(
+                    reverse("activities:material_open", kwargs={"material_id": m.id})
+                ),
+                "kind": kind,
+            }
+    return None
 
 
 @require_GET
@@ -249,49 +442,40 @@ def activity_list(request):
 
     # HTML response
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
-        tags_qs = Tag.objects.order_by("name")
-        tags = list(tags_qs)
-        tag_param = request.GET.get("tag", "").strip()
+        tags = list(Tag.objects.order_by("name"))
         categories = list(Category.objects.order_by("name").values("id", "name", "description"))
-        pagination_params = {k: v for k, v in request.GET.items() if k != "page"}
-        pagination_base = urlencode(pagination_params) if pagination_params else ""
-        # Query string without tag/page (preserve q, category, sort) — for clearing tag chips + banner link
-        get_no_tag_no_page = request.GET.copy()
-        get_no_tag_no_page.pop("page", None)
-        get_no_tag_no_page.pop("tag", None)
-        clear_tag_query = get_no_tag_no_page.urlencode()
-        list_reverse = reverse("activities:list")
-        if clear_tag_query:
-            clear_tag_url = f"{list_reverse}?{clear_tag_query}"
-        else:
-            clear_tag_url = list_reverse
-        active_tag_name = tag_param.lower() if tag_param else ""
-        # Preserve other filters when clicking a tag on a card (reset page when tag changes)
-        tag_apply_queries = {}
-        for tag in tags:
-            gb = request.GET.copy()
-            gb.pop("page", None)
-            gb["tag"] = tag.name
-            tag_apply_queries[tag.name] = gb.urlencode()
-        active_filtered_tag = None
-        if tag_param:
-            for tag in tags:
-                if tag.name.lower() == tag_param.lower():
-                    active_filtered_tag = tag
-                    break
-        has_active_filters = bool(
-            request.GET.get("q", "").strip()
-            or request.GET.get("category", "").strip()
-            or request.GET.get("tag", "").strip()
-            or (
-                request.GET.get("sort", "").strip()
-                and request.GET.get("sort") != "-created_at"
+        page_params = request.GET.copy()
+        page_params.pop("page", None)
+        pagination_base = page_params.urlencode()
+        active_tag_names = {t.lower() for t in _selected(request, "tag")}
+        # Card tag chips toggle that tag in the filter (other filters are kept, page resets).
+        tag_urls = {
+            t.name: _query_toggle(request, "tag", t.name, on=t.name.lower() not in active_tag_names) for t in tags
+        }
+        facets = _browse_facets(request)
+        q = request.GET.get("q", "").strip()
+        active_chips = []
+        if q:
+            active_chips.append({"label": f"“{q}”", "url": _query_without(request, "q"), "kind": "search"})
+        for c in facets["category_selected"]:
+            active_chips.append({"label": c["name"], "url": _query_toggle(request, "category", c["id"], on=False), "kind": "category"})
+        for t in facets["tag_selected"]:
+            active_chips.append({"label": t["display_name"], "url": _query_toggle(request, "tag", t["name"], on=False), "kind": "tag"})
+        activity_rows = []
+        for a in page_obj.object_list:
+            body, duration = _split_duration(a.description)
+            tags_list = list(a.tags.all())
+            activity_rows.append(
+                {
+                    "activity": a,
+                    "tile_image": tile_image_url(a),
+                    "preview": _first_previewable(a, request),
+                    "description": body,
+                    "duration": duration,
+                    "tags_shown": tags_list[:3],
+                    "tags_more": max(0, len(tags_list) - 3),
+                }
             )
-        )
-        activity_rows = [
-            {"activity": a, "tile_image": tile_image_url(a)}
-            for a in page_obj.object_list
-        ]
         return render(
             request,
             "activities/activity_list.html",
@@ -300,13 +484,11 @@ def activity_list(request):
                 "page_obj": page_obj,
                 "total": paginator.count,
                 "tags": tags,
-                "tag_apply_queries": tag_apply_queries,
-                "clear_tag_query": clear_tag_query,
-                "clear_tag_url": clear_tag_url,
-                "active_tag_name": active_tag_name,
-                "active_filtered_tag": active_filtered_tag,
-                "has_active_filters": has_active_filters,
+                "tag_urls": tag_urls,
+                "active_tag_names": active_tag_names,
+                "active_chips": active_chips,
                 "categories": categories,
+                **facets,
                 "pagination_base": pagination_base,
             },
         )
@@ -337,6 +519,35 @@ def activity_list(request):
     )
 
 
+def _related_activities(activity, limit=3):
+    """Activities sharing the category or tags, ranked by how many tags they share."""
+    tag_ids = [t.id for t in activity.tags.all()]
+    qs = (
+        Activity.objects.exclude(pk=activity.pk)
+        .filter(Q(category_id=activity.category_id) | Q(tags__id__in=tag_ids))
+        .annotate(shared=Count("tags", filter=Q(tags__id__in=tag_ids), distinct=True))
+        .select_related("category")
+        .prefetch_related("tags")
+        .order_by("-shared", "-created_at")
+        .distinct()[:limit]
+    )
+    rows = []
+    for a in qs:
+        body, duration = _split_duration(a.description)
+        tags_list = list(a.tags.all())
+        rows.append(
+            {
+                "activity": a,
+                "tile_image": tile_image_url(a),
+                "description": body,
+                "duration": duration,
+                "tags_shown": tags_list[:3],
+                "tags_more": max(0, len(tags_list) - 3),
+            }
+        )
+    return rows
+
+
 @require_GET
 def activity_detail(request, slug):
     """Retrieve a single activity by slug. Returns HTML or JSON."""
@@ -349,10 +560,18 @@ def activity_detail(request, slug):
 
     # HTML response
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
+        description, duration = _split_duration(activity.description)
         return render(
             request,
             "activities/activity_detail.html",
-            {"activity": activity, "materials": materials},
+            {
+                "activity": activity,
+                "materials": materials,
+                "description": description,
+                "duration": duration,
+                "tile_image": tile_image_url(activity),
+                "related_activities": _related_activities(activity),
+            },
         )
 
     # JSON response
