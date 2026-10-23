@@ -47,3 +47,6 @@ media/
 .cache
 .pypirc
 .DS_Store
+
+# Local editor/agent config
+.claude/

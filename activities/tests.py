@@ -159,9 +159,9 @@ class ActivityDetailTests(TestCase):
     def test_detail_404_for_invalid_slug(self):
         resp = self.client.get("/activities/non-existent-slug/")
         self.assertEqual(resp.status_code, 404)
-        data = json.loads(resp.content)
-        self.assertEqual(data["status"], 404)
-        self.assertIn("error", data)
+        # Project-wide 404s render HTML (see config/urls.py); json_error_response
+        # is only used by views that opt into it.
+        self.assertIn("text/html", resp["Content-Type"])
 
     def test_anonymous_can_view_detail_json(self):
         self.client.logout()
@@ -225,8 +225,10 @@ class CategoryListTests(TestCase):
         resp = self.client.get("/categories/")
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.content)
-        self.assertEqual(len(data["categories"]), 1)
-        self.assertEqual(data["categories"][0]["name"], "Icebreakers")
+        # Migration 0006 seeds the curriculum categories, so don't assume an
+        # empty table - assert the endpoint returns all of them, including ours.
+        self.assertEqual(len(data["categories"]), Category.objects.count())
+        self.assertIn("Icebreakers", [c["name"] for c in data["categories"]])
 
 
 class ContactFormTests(TestCase):

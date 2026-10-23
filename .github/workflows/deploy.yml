@@ -1,0 +1,56 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Allows a re-deploy of the current main without pushing a commit.
+  workflow_dispatch:
+
+# Queue overlapping merges instead of racing them onto the server.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to production
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://www.teachorange.com
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          # Fail the step if the remote script exits non-zero.
+          script_stops: true
+          command_timeout: 15m
+          envs: GITHUB_SHA
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            ./deploy.sh
+
+      - name: Verify the site is serving the new code
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://www.teachorange.com/ || true)
+            if [ "$code" = "200" ]; then
+              echo "Site healthy (HTTP $code)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $code — retrying"
+            sleep 6
+          done
+          echo "Site did not return 200 after deploy"
+          exit 1

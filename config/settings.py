@@ -8,6 +8,8 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,19 +22,30 @@ load_dotenv(BASE_DIR / ".env")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-&b0sm4$y3=4nkqm(#)np@b1atwcdc@u_$t_#-3&vw-kw$v2at$",
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
-# Local default True; on Render set DJANGO_DEBUG=0 (or false).
+# Local default True; in production set DJANGO_DEBUG=0 (or false).
 _e = (os.environ.get("DJANGO_DEBUG", "1") or "1").lower()
 DEBUG = _e in ("1", "true", "yes", "on")
 
+# SECURITY WARNING: keep the secret key used in production secret!
+# Development falls back to a well-known key for convenience. Production must set
+# DJANGO_SECRET_KEY — with automated deploys a missing value would otherwise ship
+# silently, leaving sessions and CSRF tokens forgeable by anyone reading this repo.
+_DEV_SECRET_KEY = "django-insecure-&b0sm4$y3=4nkqm(#)np@b1atwcdc@u_$t_#-3&vw-kw$v2at$"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = _DEV_SECRET_KEY
+    else:
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set when DJANGO_DEBUG=0. "
+            "Generate one with: python -c "
+            "'from django.core.management.utils import get_random_secret_key as k; print(k())'"
+        )
+
 # Use one hostname in the browser (localhost *or* 127.0.0.1). Mixing them breaks CSRF cookies.
-# On Render, `RENDER_EXTERNAL_HOSTNAME` and `RENDER_EXTERNAL_URL` are set automatically.
+# In production set DJANGO_ALLOWED_HOSTS and DJANGO_CSRF_TRUSTED_ORIGINS explicitly; the
+# RENDER_* vars below are only populated when running on Render and are inert elsewhere.
 _allowed = [
     h.strip()
     for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
@@ -132,7 +145,7 @@ else:
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("POSTGRES_DB", "teaching_activities"),
-            "USER": os.environ.get("POSTGRES_USER", "abhijnyakg"),
+            "USER": os.environ.get("POSTGRES_USER", os.environ.get("USER", "")),
             "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
             "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
             "PORT": os.environ.get("POSTGRES_PORT", "5432"),
@@ -245,8 +258,9 @@ elif EMAIL_HOST and EMAIL_HOST_USER:
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # Sign-up: require email to end with one of these suffixes (lowercased).
-# Restricted to Syracuse University for now; broaden to (".edu",) later if needed.
-ALLOWED_EMAIL_SUFFIXES = ("@syr.edu",)
+# Open to any university address, matching what the landing page promises.
+# Narrow this (e.g. to ("@syr.edu",)) only alongside the site copy and the tests.
+ALLOWED_EMAIL_SUFFIXES = (".edu",)
 
 # Where the public contact form routes submissions (override in the host env).
 CONTACT_EMAIL = os.environ.get("DJANGO_CONTACT_EMAIL", "mdbrockw@syr.edu")
