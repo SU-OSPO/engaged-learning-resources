@@ -223,7 +223,111 @@
     (function() {
         var form = document.getElementById('contact-form');
         if (!form) return;
-        // Tie each error message to its field for screen readers.
+
+        // Client-side rules mirror ContactForm in activities/forms.py. They must not
+        // be stricter than the server: `email` is a plain EmailField there, so no
+        // .edu requirement here. The server still validates everything on submit;
+        // this only moves the feedback earlier.
+        var RULES = {
+            id_request_type: [required('Choose a request type.')],
+            id_name:         [required('Enter your name.'), maxLen(120)],
+            id_email:        [required('Enter your email address.'), emailFormat()],
+            id_institution:  [maxLen(160)],
+            id_subject:      [required('Add a short subject.'), maxLen(160)],
+            id_message:      [required('Enter a message.'), minLen(10), maxLen(5000)]
+        };
+
+        function required(msg) {
+            return function(v) { return v.trim() ? null : msg; };
+        }
+        function minLen(n) {
+            return function(v) {
+                if (!v.trim()) return null;              // `required` owns the empty case
+                return v.trim().length >= n ? null : 'Please write at least ' + n + ' characters.';
+            };
+        }
+        function maxLen(n) {
+            return function(v) {
+                return v.length <= n ? null : 'Please keep this under ' + n + ' characters.';
+            };
+        }
+        function emailFormat() {
+            return function(v) {
+                if (!v.trim()) return null;
+                // Deliberately permissive - just enough to catch typos. The server
+                // and the mail provider are the real authorities.
+                return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim())
+                    ? null : 'That does not look like an email address.';
+            };
+        }
+
+        function fieldOf(input) { return input.closest('.cf-field'); }
+
+        function firstProblem(input) {
+            var checks = RULES[input.id] || [];
+            for (var i = 0; i < checks.length; i++) {
+                var msg = checks[i](input.value);
+                if (msg) return msg;
+            }
+            return null;
+        }
+
+        function showError(input, msg) {
+            var field = fieldOf(input);
+            if (!field) return;
+            field.classList.add('has-error');
+            input.setAttribute('aria-invalid', 'true');
+            var error = field.querySelector('.cf-error');
+            if (!error) {
+                error = document.createElement('p');
+                error.className = 'cf-error';
+                error.id = input.id + '-error';
+                error.setAttribute('role', 'alert');
+                field.appendChild(error);
+            }
+            error.textContent = msg;
+            var described = (input.getAttribute('aria-describedby') || '').split(' ').filter(Boolean);
+            if (described.indexOf(error.id) === -1) {
+                described.push(error.id);
+                input.setAttribute('aria-describedby', described.join(' '));
+            }
+        }
+
+        function clearError(input) {
+            var field = fieldOf(input);
+            if (!field) return;
+            field.classList.remove('has-error');
+            input.removeAttribute('aria-invalid');
+            var error = field.querySelector('.cf-error');
+            if (error) error.textContent = '';
+        }
+
+        function validate(input) {
+            var msg = firstProblem(input);
+            if (msg) { showError(input, msg); return false; }
+            clearError(input);
+            return true;
+        }
+
+        var inputs = Object.keys(RULES)
+            .map(function(id) { return document.getElementById(id); })
+            .filter(Boolean);
+
+        inputs.forEach(function(input) {
+            // Validate on blur rather than on every keystroke, so nobody is told
+            // their half-typed email is wrong. Once a field IS showing an error,
+            // re-check as they type so it clears the moment it is fixed.
+            input.addEventListener('blur', function() { validate(input); });
+            input.addEventListener('input', function() {
+                if (fieldOf(input) && fieldOf(input).classList.contains('has-error')) validate(input);
+            });
+            // A <select> has no meaningful "typing" state.
+            if (input.tagName === 'SELECT') {
+                input.addEventListener('change', function() { validate(input); });
+            }
+        });
+
+        // Server-rendered errors: wire them up for screen readers and focus the first.
         form.querySelectorAll('.cf-field.has-error').forEach(function(field) {
             var input = field.querySelector('input, select, textarea');
             var error = field.querySelector('.cf-error');
@@ -235,11 +339,17 @@
         });
         var first = form.querySelector('[aria-invalid="true"]');
         if (first) first.focus();
-        // Prevent double submits.
-        form.addEventListener('submit', function() {
+
+        form.addEventListener('submit', function(e) {
+            var bad = inputs.filter(function(input) { return !validate(input); });
+            if (bad.length) {
+                e.preventDefault();
+                bad[0].focus();
+                return;
+            }
             var btn = form.querySelector('.cf-submit');
             btn.disabled = true;
-            btn.querySelector('.cf-submit-label').textContent = 'Sending…';
+            btn.querySelector('.cf-submit-label').textContent = 'Sending\u2026';
         });
     })();
 </script>
