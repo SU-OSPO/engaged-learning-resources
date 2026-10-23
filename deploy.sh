@@ -144,20 +144,30 @@ if [ "${SKIP_BACKUP:-0}" != "1" ]; then
         STAMP="$(date +%Y%m%d-%H%M%S)"
         DUMP="$BACKUP_DIR/teachorange-$STAMP.sql"
         log "Backing up database to $DUMP"
-        # Read connection settings from Django so this honours DATABASE_URL or POSTGRES_*.
-        eval "$("$PY" - <<'PYEOF'
-import os, django
+        # Read connection settings from Django so this honours DATABASE_URL or
+        # POSTGRES_*. Values are shell-quoted: generated passwords routinely
+        # contain characters that would otherwise break (or be executed by) eval.
+        PG_ENV="$("$PY" - <<'PYEOF'
+import os, shlex, django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 from django.conf import settings
 d = settings.DATABASES["default"]
-print(f'export PGHOST={d.get("HOST") or "localhost"}')
-print(f'export PGPORT={d.get("PORT") or 5432}')
-print(f'export PGUSER={d.get("USER") or ""}')
-print(f'export PGPASSWORD={d.get("PASSWORD") or ""}')
-print(f'export PGDATABASE={d.get("NAME") or ""}')
+for var, val in (
+    ("PGHOST", d.get("HOST") or "localhost"),
+    ("PGPORT", d.get("PORT") or "5432"),
+    ("PGUSER", d.get("USER") or ""),
+    ("PGPASSWORD", d.get("PASSWORD") or ""),
+    ("PGDATABASE", d.get("NAME") or ""),
+):
+    print(f"export {var}={shlex.quote(str(val))}")
 PYEOF
 )"
+        if [ -z "$PG_ENV" ]; then
+            echo "ERROR: could not read database settings for the backup" >&2
+            exit 1
+        fi
+        eval "$PG_ENV"
         pg_dump --no-owner --no-acl > "$DUMP"
         gzip -f "$DUMP"
         log "Backup written: $DUMP.gz"
