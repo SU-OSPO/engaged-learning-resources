@@ -2,11 +2,15 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  # Called by deploy.yml so the same suite gates releases. A reusable workflow
+  # must declare workflow_call; without it the calling run fails at startup
+  # before any job is created.
+  workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Keep the caller's run id in the group so a deploy's test job is never
+  # cancelled by an unrelated CI run on the same ref.
+  group: ci-${{ github.ref }}-${{ github.run_id }}
   cancel-in-progress: true
 
 jobs:
