@@ -39,6 +39,13 @@ jobs:
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
+            # Bootstrap: the checkout on the server may predate deploy.sh (or carry
+            # an older copy), so fetch the script itself before running it. This
+            # only touches deploy.sh and leaves HEAD alone, so the script still
+            # sees the true previous revision and can roll back to it.
+            git fetch --all --prune
+            git checkout origin/main -- deploy.sh
+            chmod +x deploy.sh
             ./deploy.sh
 
       - name: Verify the site is serving the new code
