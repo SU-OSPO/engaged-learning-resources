@@ -45,6 +45,16 @@
     .auth-card .btn-row .btn { width: 100%; }
     .auth-card .sub { margin-top: 1.25rem; font-size: 0.95rem; color: var(--su-gray-dark); }
     .auth-card .sub a { color: var(--su-orange-dark); font-weight: 600; }
+    /* Inline validation messages (JS-generated); matches .errorlist treatment. */
+    .field-error {
+        margin: 0.3rem 0 0.6rem;
+        color: #b00020;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+    input[aria-invalid="true"] {
+        border-color: #b00020;
+    }
 </style>
 {% endblock %}
 
@@ -52,7 +62,7 @@
 <div class="auth-card">
     <h1>Log in to <span class="brand-teach">Teach</span><span class="brand-orange">Orange</span> 🍊</h1>
     <p class="auth-sub">Use your university email and password.</p>
-    <form method="post" action="{% url 'accounts:login' %}">
+    <form method="post" action="{% url 'accounts:login' %}" id="login-form" novalidate>
         {% csrf_token %}
         {% if form.non_field_errors %}
         <ul class="errorlist">{{ form.non_field_errors }}</ul>
@@ -79,4 +89,75 @@
     <p class="auth-forgot"><a href="{% url 'accounts:password_reset' %}" class="auth-outline">Forgot password?</a></p>
     <p class="sub">No account? <a href="{% url 'accounts:register' %}">Register with your .edu email</a></p>
 </div>
+
+<script>
+    (function() {
+        var form = document.getElementById('login-form');
+        if (!form) return;
+        var email = document.getElementById('id_username');
+        var password = document.getElementById('id_password');
+        if (!email || !password) return;
+
+        // Mirrors validate_faculty_email() in accounts/forms.py, which the login
+        // view enforces through TeachOrangeAuthenticationForm.clean_username.
+        // Note this is stricter than the contact form, where any email is fine.
+        function problemWith(input) {
+            var v = (input.value || '').trim();
+            if (input === email) {
+                if (!v) return 'Enter your email address.';
+                if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v)) return 'That does not look like an email address.';
+                if (!/\.edu$/i.test(v)) return 'Use your university email address (ending in .edu).';
+            }
+            if (input === password && !v) return 'Enter your password.';
+            return null;
+        }
+
+        function errorNodeFor(input) {
+            var id = input.id + '-inline-error';
+            var node = document.getElementById(id);
+            if (!node) {
+                node = document.createElement('p');
+                node.id = id;
+                node.className = 'field-error';
+                node.setAttribute('role', 'alert');
+                // Insert after the field, or after its wrapper for the password toggle.
+                var anchor = input.closest('.pw-wrap') || input;
+                anchor.parentNode.insertBefore(node, anchor.nextSibling);
+            }
+            return node;
+        }
+
+        function validate(input) {
+            var msg = problemWith(input);
+            var node = errorNodeFor(input);
+            if (msg) {
+                node.textContent = msg;
+                input.setAttribute('aria-invalid', 'true');
+                input.setAttribute('aria-describedby', node.id);
+                return false;
+            }
+            node.textContent = '';
+            input.removeAttribute('aria-invalid');
+            input.removeAttribute('aria-describedby');
+            return true;
+        }
+
+        [email, password].forEach(function(input) {
+            // Check on blur so nobody is corrected mid-keystroke; once an error is
+            // showing, re-check on input so it clears as soon as it is fixed.
+            input.addEventListener('blur', function() { validate(input); });
+            input.addEventListener('input', function() {
+                if (input.getAttribute('aria-invalid') === 'true') validate(input);
+            });
+        });
+
+        form.addEventListener('submit', function(e) {
+            var bad = [email, password].filter(function(i) { return !validate(i); });
+            if (bad.length) {
+                e.preventDefault();
+                bad[0].focus();
+            }
+        });
+    })();
+</script>
 {% endblock %}
