@@ -4,31 +4,31 @@ How TeachOrange fits together, and why it is arranged this way.
 
 ## At a glance
 
-```
-                        ┌──────────────────────────────────────────┐
-  browser ──── https ──▶│ nginx  (CloudPanel-managed, port 443)    │
-                        │   /static/  ─▶ served from disk          │
-                        │   everything else ─▶ proxy to :8090      │
-                        └───────────────────┬──────────────────────┘
-                                            │
-                        ┌───────────────────▼──────────────────────┐
-                        │ gunicorn  127.0.0.1:8090  (3 workers)    │
-                        │   config.wsgi:application                │
-                        └───────────────────┬──────────────────────┘
-                                            │
-                        ┌───────────────────▼──────────────────────┐
-                        │ Django 4.2                               │
-                        │   config/     settings, urls, wsgi       │
-                        │   accounts/   registration, auth         │
-                        │   activities/ catalogue, materials       │
-                        └───────────────────┬──────────────────────┘
-                                            │
-                        ┌───────────────────▼──────────────────────┐
-                        │ PostgreSQL 16   teaching_activities      │
-                        └──────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    browser([Browser])
 
-  media/ (uploads)  ─── on the server's filesystem, served BY DJANGO, not nginx
+    subgraph vps["Hostinger VPS"]
+        nginx["nginx :443<br/><i>CloudPanel-managed</i>"]
+        gunicorn["gunicorn 127.0.0.1:8090<br/>3 workers"]
+        django["Django 4.2<br/>config · accounts · activities"]
+        pg[("PostgreSQL 16<br/>teaching_activities")]
+        static[/"staticfiles/<br/>collectstatic output"/]
+        media[/"media/<br/>uploaded materials"/]
+    end
+
+    browser -- https --> nginx
+    nginx -- "/static/*" --> static
+    nginx -- "everything else<br/>reverse proxy" --> gunicorn
+    gunicorn --> django
+    django --> pg
+    django -. "login-gated read<br/>NOT served by nginx" .-> media
 ```
+
+`/static/` is served straight off disk by nginx. **`/media/` is not** — uploads are
+read by Django so the `@login_required` gate applies. See
+[Why media is served by Django](#why-media-is-served-by-django).
+
 
 Operational detail — how gunicorn is started, reloaded and deployed — lives in
 [operations.md](operations.md).
@@ -100,18 +100,49 @@ never the authority: `templates/accounts/register.html` and
 `EmailField` with no suffix rule — anyone may contact the team. Do not "fix" this
 by copying the `.edu` check across; it would reject legitimate senders.
 
+```mermaid
+flowchart LR
+    email["Email submitted"] --> which{Which form?}
+    which -- "Register / Login /<br/>Password reset" --> edu{"ends with<br/>.edu?"}
+    which -- "Contact" --> fmt{"valid email<br/>format?"}
+    edu -- yes --> ok1([Accepted])
+    edu -- no --> rej(["Rejected<br/><i>validate_faculty_email</i>"])
+    fmt -- yes --> ok2([Accepted])
+    fmt -- no --> rej2([Rejected])
+```
+
+Client-side JavaScript mirrors both branches for faster feedback, but is never the
+authority — the server validates every submission regardless.
+
 ## Request flow for a material download
 
-Worth tracing once, because it crosses every layer:
+Worth tracing once, because it crosses every layer and shows where the gate sits.
 
-1. `GET /activities/materials/10/download/`
-2. nginx proxies to gunicorn (not a `/static/` path)
-3. `@login_required` → anonymous users get `302 → /accounts/login/?next=…`
-4. Signed in: `material_download` looks up the `Material`
-5. Response streams the file from `MEDIA_ROOT` with `Content-Disposition: attachment`
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Visitor
+    participant N as nginx
+    participant G as gunicorn / Django
+    participant DB as PostgreSQL
+    participant FS as media/ on disk
 
-`material_open` is the same path but renders inline for previewable types, using
-`Material.preview_pdf` when the main file is not itself a PDF.
+    U->>N: GET /activities/materials/10/download/
+    N->>G: proxy (not a /static/ path)
+
+    alt not signed in
+        G-->>U: 302 → /accounts/login/?next=…
+    else signed in
+        G->>DB: look up Material 10
+        DB-->>G: row
+        G->>FS: read file from MEDIA_ROOT
+        FS-->>G: bytes
+        G-->>U: 200 + Content-Disposition: attachment
+    end
+```
+
+`material_open` follows the same path but renders inline for previewable types,
+using `Material.preview_pdf` when the main file is not itself a PDF.
 
 ## Error handling
 

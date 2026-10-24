@@ -2,56 +2,55 @@
 
 ## Teaching Activities Platform : Database Schema
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           ENTITY-RELATIONSHIP DIAGRAM                            │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+erDiagram
+    CATEGORY ||--o{ ACTIVITY : "groups"
+    ACTIVITY ||--o{ MATERIAL : "has"
+    ACTIVITY ||--o{ ACTIVITY_TAG : ""
+    TAG      ||--o{ ACTIVITY_TAG : ""
 
-┌──────────────────────┐
-│      Category         │
-├──────────────────────┤
-│ PK  id                │
-│     name              │
-│     description       │
-└──────────┬───────────┘
-           │
-           │ 1
-           │
-           │ has many
-           │
-           │ N
-           ▼
-┌──────────────────────┐         ┌──────────────────────┐
-│      Activity         │         │    ActivityTag        │
-├──────────────────────┤         ├──────────────────────┤
-│ PK  id                │◄────────│ PK  id                │
-│ UQ  slug              │    N    │ FK  activity_id       │
-│ FK  category_id       │────────►│ FK  tag_id            │
-│     title             │    N    └──────────┬───────────┘
-│     description       │
-│     created_at        │                    │
-│     updated_at        │                    │ N
-└──────────┬───────────┘                    │
-           │                                │
-           │ 1                              │ belongs to
-           │                                │
-           │ has many                       │ 1
-           │                                ▼
-           │ N                    ┌──────────────────────┐
-           ▼                      │        Tag           │
-┌──────────────────────┐         ├──────────────────────┤
-│      Material         │         │ PK  id                │
-├──────────────────────┤         │     name (unique)     │
-│ PK  id                │         └──────────────────────┘
-│ FK  activity_id       │
-│     title             │
-│     file_path         │
-│     material_type     │
-│     uploaded_at       │
-└──────────────────────┘
-
-material_type: ENUM('worksheet', 'instructions', 'example', 'video')
+    CATEGORY {
+        bigint   id PK
+        varchar  name
+        text     description
+        datetime created_at
+        datetime updated_at
+    }
+    ACTIVITY {
+        bigint   id PK
+        varchar  slug UK "public URL key, auto-populated"
+        bigint   category_id FK
+        varchar  title
+        text     description
+        datetime created_at
+        datetime updated_at
+    }
+    TAG {
+        bigint  id PK
+        varchar name UK "case-insensitively unique"
+    }
+    ACTIVITY_TAG {
+        bigint   id PK
+        bigint   activity_id FK
+        bigint   tag_id FK
+        datetime created_at
+    }
+    MATERIAL {
+        bigint   id PK
+        bigint   activity_id FK
+        varchar  title
+        file     file "the download"
+        file     preview_pdf "optional, when file is not a PDF"
+        varchar  material_type
+        datetime uploaded_at
+    }
 ```
+
+`ACTIVITY_TAG` is an explicit through-model rather than a plain `ManyToManyField`,
+so each tag assignment carries its own `created_at`.
+
+`material_type` is one of `worksheet`, `instructions`, `example`, `video`.
+
 
 ## Relationships Summary
 
@@ -63,22 +62,17 @@ material_type: ENUM('worksheet', 'instructions', 'example', 'video')
 | ActivityTag| Activity   | N : 1       | Many activity-tag pairs per activity  |
 | ActivityTag| Tag        | N : 1       | Many activity-tag pairs per tag       |
 
-## Fields added after this diagram was drawn
+## Migration notes
 
-The ASCII art above reflects the original schema. Two fields have been added since,
-and are included in `schema.sql`:
+| Migration | Effect |
+|---|---|
+| `0004_add_activity_slug` | Added `Activity.slug` (unique). Mixes raw SQL with a `RunPython` whose reverse is a no-op — **not safely reversible** |
+| `0005_material_preview_pdf` | Added `Material.preview_pdf` |
+| `0006_add_curriculum_categories` | Seeds 10 `Category` rows as **data**, no schema change. Tests must not assume the table starts empty |
 
-| Model | Field | Added by | Purpose |
-|---|---|---|---|
-| `Activity` | `slug` (unique) | `0004_add_activity_slug` | Public URL key — `/activities/<slug>/` |
-| `Material` | `preview_pdf` | `0005_material_preview_pdf` | Optional PDF rendering, used when `file` is not itself a PDF |
-
-`0006_add_curriculum_categories` also seeds 10 `Category` rows as data; it changes
-no schema. Tests must therefore not assume the `Category` table starts empty.
-
-To regenerate the authoritative field list at any time:
+Regenerate the authoritative field list at any time:
 
 ```bash
-python manage.py inspectdb          # from the live database
-python manage.py sqlmigrate activities 0001   # DDL for a given migration
+python manage.py inspectdb                      # from the live database
+python manage.py sqlmigrate activities 0001     # DDL for a given migration
 ```
