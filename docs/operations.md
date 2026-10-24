@@ -59,6 +59,31 @@ edits to `/etc/nginx/sites-enabled/` get overwritten — change it through the p
 **Pushing to `main` deploys automatically.** `.github/workflows/deploy.yml` waits for
 the test suite, then runs `deploy.sh` on the server over SSH.
 
+### The pipeline
+
+```mermaid
+flowchart TD
+    push(["Push to main"]) --> tests["CI: 47 tests<br/>+ check --deploy"]
+    tests -- fail --> stop([Nothing deployed])
+    tests -- pass --> ssh["SSH to the VPS<br/>as teachorange"]
+    ssh --> boot["Bootstrap:<br/>fetch deploy.sh only<br/><i>HEAD unchanged</i>"]
+    boot --> run["./deploy.sh"]
+    run --> sha["Record current SHA"]
+    sha --> pull["git reset --hard origin/main"]
+    pull --> deps["pip install"]
+    deps --> dump[("pg_dump → db-backups/")]
+    dump --> migrate["manage.py migrate"]
+    migrate --> collect["manage.py collectstatic"]
+    collect --> reload["SIGHUP gunicorn master<br/><i>graceful, no dropped requests</i>"]
+    reload --> health{"site returns 200<br/>within ~50s?"}
+    health -- yes --> done([Deployed])
+    health -- no --> rollback["git reset --hard &lt;previous SHA&gt;<br/>reinstall · restart"]
+    rollback --> failed(["Failed<br/><b>code reverted, DB NOT reverted</b>"])
+```
+
+> The database is **not** rolled back. That is why `pg_dump` runs before `migrate`:
+> restoring schema means restoring a dump, by hand.
+
 ### What `deploy.sh` does
 
 1. Records the current commit for rollback
@@ -168,6 +193,27 @@ the junk folder**, and the reset link worked. So the application is fine; only t
 sender identity is wrong.
 
 Every alternative is currently **worse** than the status quo:
+
+```mermaid
+flowchart TD
+    app["Django sends mail"] --> mj["Mailjet relay<br/>in-v3.mailjet.com"]
+    mj --> from{"From address"}
+
+    from -- "@gmail.com<br/><i>current</i>" --> spf1["gmail.com SPF does not<br/>authorise Mailjet → FAIL"]
+    spf1 --> dmarc1["gmail.com DMARC p=none"]
+    dmarc1 --> junk(["Junk folder<br/>delivered"])
+
+    from -- "@teachorange.com" --> spf2["no SPF, no DKIM<br/>on the domain"]
+    spf2 --> dmarc2["teachorange.com<br/>DMARC p=quarantine"]
+    dmarc2 --> quar(["Quarantined<br/><b>worse</b>"])
+
+    from -- "@syr.edu" --> spf3["syr.edu SPF ends -all<br/>→ hard FAIL"]
+    spf3 --> dmarc3["syr.edu DMARC p=reject"]
+    dmarc3 --> rej(["Bounced<br/><b>much worse</b>"])
+
+    from -. "after SPF + DKIM<br/>are added to DNS" .-> fixed(["Inbox ✓<br/><i>the goal</i>"])
+```
+
 
 | From address | SPF result | Domain DMARC | Outcome |
 |---|---|---|---|
